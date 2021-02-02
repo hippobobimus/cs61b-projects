@@ -125,11 +125,23 @@ public class ArrayDequeTest {
 		ad.addLast(1);
 		ad.addLast(2);
 		ad.addLast(3);
+		System.out.println("Printing out deque after filling: ");
+        ad.printDeque();
         ad.removeFirst();
+		System.out.println("Printing out deque after reducing: ");
+        ad.printDeque();
         ad.removeFirst();
+		System.out.println("Printing out deque after reducing: ");
+        ad.printDeque();
         ad.removeFirst();
+		System.out.println("Printing out deque after reducing: ");
+        ad.printDeque();
         ad.removeFirst();
+		System.out.println("Printing out deque after reducing: ");
+        ad.printDeque();
 		ad.addLast(4);
+		System.out.println("Printing out deque after adding: ");
+        ad.printDeque();
 		ad.addLast(5);
 		ad.addLast(6);
 		ad.addLast(7);
@@ -143,12 +155,75 @@ public class ArrayDequeTest {
 		printTestStatus(passed);
 	}
 
+	/** Populates and  depopulates a deque testing resizing occurs correctly. */
+	public static void resizeTest() {
+
+		System.out.println("Running resize test.");
+
+		ArrayDeque<Integer> ad = new ArrayDeque<Integer>();
+		// should be empty 
+		boolean passed = checkEmpty(true, ad.isEmpty());
+
+		ad.addFirst(1);
+		ad.addFirst(2);
+		ad.addLast(10);
+		ad.addLast(20);
+		ad.addLast(30);
+		ad.addLast(40);
+		ad.addLast(50);
+		ad.addLast(60);
+        // Array length 8
+        // 1  2  3  4  5  6  7 0
+        // 1 10 20 30 40 50 60 2
+		ad.addLast(70);
+        // Array length 16
+        // 0 1  2  3  4  5  6  7  8
+        // 2 1 10 20 30 40 50 60 70
+        ad.addFirst(3);
+        // 1 2  3  4  5  6  7  8  9 ... 0
+        // 2 1 10 20 30 40 50 60 70 ... 3
+        passed = checkGet(70, ad.get(9)) && passed;
+        passed = checkGet(3, ad.get(0)) && passed;
+
+        for (int i = 0; i < 6; i++) {
+            ad.removeLast();
+        }
+        // Array length 8
+        // 0 1 2  3
+        // 3 2 1 10 ...
+        passed = checkGet(10, ad.get(3)) && passed;
+        passed = checkGet(3, ad.get(0)) && passed;
+
+        ad.addLast(80);
+        ad.addLast(90);
+        ad.addLast(100);
+        ad.addLast(110);
+        ad.addLast(120);
+        // Array length 16
+        // 0 1 2  3  4  5   6   7   8
+        // 3 2 1 10 80 90 100 110 120
+        passed = checkGet(120, ad.get(8)) && passed;
+        passed = checkGet(3, ad.get(0)) && passed;
+
+        for (int i = 0; i < 5; i++) {
+            ad.removeLast();
+        }
+        // Array length 8
+        // 0 1 2  3
+        // 3 2 1 10 ...
+        passed = checkGet(10, ad.get(3)) && passed;
+        passed = checkGet(3, ad.get(0)) && passed;
+
+		printTestStatus(passed);
+	}
+
 	public static void main(String[] args) {
 		System.out.println("Running tests.\n");
 		addIsEmptySizeTest();
 		addRemoveTest();
         getTest();
         cycleTest();
+        resizeTest();
 	}
 } 
 
