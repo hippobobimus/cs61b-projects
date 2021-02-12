@@ -55,6 +55,9 @@ public class TestBSTMap {
         assertTrue(((Integer) b.get("KISS")).equals(5));
         assertNotEquals(null,b.get("starChild"));
         assertEquals(2, b.size());
+        b.put("KISS", 9);
+        assertTrue(((Integer) b.get("KISS")).equals(9));
+        assertTrue(((Integer) b.get("starChild")).equals(5));
     }
 
     // assumes put works
@@ -77,7 +80,18 @@ public class TestBSTMap {
         assertTrue(b.containsKey("hi") && b.get("hi") != null);
     }
 
+    @Test
+    public void printTest() {
+    	BSTMap<Character, Integer> b = new BSTMap<Character, Integer>();
+        char[] keys = new char[]{'d', 'b', 'a', 'c', 'f', 'e', 'g'};
+        for (char c : keys) {
+            b.put(c, (int) c - 'a');
+        }
+        System.out.print("Printing BSTMap: ");
+        b.printInOrder();
+    }
+
     public static void main(String[] args) {
-        jh61b.junit.TestRunner.runTests(TestBSTMap.class);
+        jh61b.junit.TestRunner.runTests("all", TestBSTMap.class);
     }
 }
