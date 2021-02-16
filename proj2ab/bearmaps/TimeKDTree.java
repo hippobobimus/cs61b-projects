@@ -21,12 +21,6 @@ public class TimeKDTree {
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println("Timing table for Kd-Tree Construction");
-        timeKDTreeConstruction();
-        System.out.println();
-    }
-
     /** Generates a random double coord value between -1000.0 and 1000.0. */
     private static double getRandomCoord(Random rnd) {
         double min = -1000.0;
@@ -46,15 +40,17 @@ public class TimeKDTree {
     }
 
     /** Builds a KDTree of size N with random coordinates. */
-    private static void buildKDTree(int N, Random rnd) {
+    private static KDTree buildKDTree(int N, Random rnd) {
         List<Point> points = getRandomPoints(N, rnd);
         KDTree tree = new KDTree(points);
+        return tree;
     }
 
     /** Builds a NaivePointSet of size N with random coordinates. */
-    private static void buildNaivePointSet(int N, Random rnd) {
+    private static NaivePointSet buildNaivePointSet(int N, Random rnd) {
         List<Point> points = getRandomPoints(N, rnd);
-        NaivePointSet tree = new NaivePointSet(points);
+        NaivePointSet set = new NaivePointSet(points);
+        return set;
     }
 
     public static void timeKDTreeConstruction() {
@@ -65,32 +61,88 @@ public class TimeKDTree {
         long seed = 956;
         Random rnd = new Random(seed);
 
-        int N = (int) 1E6;
-        Stopwatch sw = new Stopwatch();
-        buildKDTree(N, rnd);
-        double timeInSeconds = sw.elapsedTime();
-        Ns.add(N);
-        times.add(timeInSeconds);
-        opCounts.add(N);
+        for (int N = 31250; N <= 2_000_000; N *= 2) {
+            Stopwatch sw = new Stopwatch();
+            buildKDTree(N, rnd);
+            double timeInSeconds = sw.elapsedTime();
 
-
-
-
-        //KDTree tree = new KDTree(points);
-        //NaivePointSet nn = new NaivePointSet(points);
-
-        ////System.out.println(tree);
-
-        //for(int i = 0; i < 1E4; i++) {
-        //    Point target = new Point(getRandomCoord(rnd), getRandomCoord(rnd));
-        //    double expected = Point.distance(target,
-        //            nn.nearest(target.getX(), target.getY()));
-        //    double actual = Point.distance(target,
-        //            tree.nearest(target.getX(), target.getY()));
-        //}
+            Ns.add(N);
+            times.add(timeInSeconds);
+            opCounts.add(N);
+        }
 
         printTimingTable(Ns, times, opCounts);
     }
 
+    public static void timeNaiveNearest() {
+        ArrayList<Integer> Ns = new ArrayList<>();
+        ArrayList<Double> times = new ArrayList<>();
+        ArrayList<Integer> opCounts = new ArrayList<>();
 
+        long seed = 956;
+        Random rnd = new Random(seed);
+
+        int queries = 1_000_000;
+
+        for (int N = 125; N <= 1000; N *= 2) {
+            NaivePointSet nps = buildNaivePointSet(N, rnd);
+
+            Stopwatch sw = new Stopwatch();
+            for (int j = 0; j < queries; j++) {
+                double x = getRandomCoord(rnd);
+                double y = getRandomCoord(rnd);
+                nps.nearest(x, y);
+            }
+            double timeInSeconds = sw.elapsedTime();
+
+            Ns.add(N);
+            times.add(timeInSeconds);
+            opCounts.add(queries);
+        }
+
+        printTimingTable(Ns, times, opCounts);
+    }
+
+    public static void timeKDTreeNearest() {
+        ArrayList<Integer> Ns = new ArrayList<>();
+        ArrayList<Double> times = new ArrayList<>();
+        ArrayList<Integer> opCounts = new ArrayList<>();
+
+        long seed = 956;
+        Random rnd = new Random(seed);
+
+        int queries = 1_000_000;
+
+        for (int N = 31250; N <= 1_000_000; N *= 2) {
+            KDTree tree = buildKDTree(N, rnd);
+
+            Stopwatch sw = new Stopwatch();
+            for (int j = 0; j < queries; j++) {
+                double x = getRandomCoord(rnd);
+                double y = getRandomCoord(rnd);
+                tree.nearest(x, y);
+            }
+            double timeInSeconds = sw.elapsedTime();
+
+            Ns.add(N);
+            times.add(timeInSeconds);
+            opCounts.add(queries);
+        }
+
+        printTimingTable(Ns, times, opCounts);
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Timing table for Kd-Tree Construction");
+        timeKDTreeConstruction();
+        System.out.println();
+
+        System.out.println("Timing table for Naive Nearest");
+        timeNaiveNearest();
+        System.out.println();
+
+        System.out.println("Timing table for Kd-Tree Nearest");
+        timeKDTreeNearest();
+        System.out.println();
+    }
 }
