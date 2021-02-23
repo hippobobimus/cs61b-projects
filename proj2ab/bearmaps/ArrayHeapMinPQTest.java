@@ -7,10 +7,6 @@ import static org.junit.Assert.*;
 
 public class ArrayHeapMinPQTest {
 
-    private int getRandomPriority(Random rnd) {
-        return rnd.nextInt() * 1_000_000;
-    }
-
     @Test
     public void testAddRemoveSizeSingleItem() {
         ArrayHeapMinPQ<String> pq = new ArrayHeapMinPQ<>();
