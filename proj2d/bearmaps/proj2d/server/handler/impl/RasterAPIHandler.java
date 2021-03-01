@@ -19,6 +19,11 @@ import java.util.Map;
 
 import static bearmaps.proj2d.utils.Constants.SEMANTIC_STREET_GRAPH;
 import static bearmaps.proj2d.utils.Constants.ROUTE_LIST;
+import static bearmaps.proj2d.utils.Constants.ROOT_ULLON;
+import static bearmaps.proj2d.utils.Constants.ROOT_ULLAT;
+import static bearmaps.proj2d.utils.Constants.ROOT_LRLON;
+import static bearmaps.proj2d.utils.Constants.ROOT_LRLAT;
+import static bearmaps.proj2d.utils.Constants.TILE_SIZE;
 
 /**
  * Handles requests from the web browser for map images. These images
@@ -26,6 +31,7 @@ import static bearmaps.proj2d.utils.Constants.ROUTE_LIST;
  * @author rahul, Josh Hug, _________
  */
 public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<String, Object>> {
+    private static final int MAX_DEPTH = 7;
 
     /**
      * Each raster request to the server will have the following parameters
@@ -84,11 +90,65 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      */
     @Override
     public Map<String, Object> processRequest(Map<String, Double> requestParams, Response response) {
-        //System.out.println("yo, wanna know the parameters given by the web browser? They are:");
-        //System.out.println(requestParams);
+        System.out.println("yo, wanna know the parameters given by the web browser? They are:");
+        System.out.println(requestParams);
         Map<String, Object> results = new HashMap<>();
         System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
                 + "your browser.");
+
+        boolean querySuccess = validateRequest(requestParams);
+        // Query box...
+        double QB_ullon = requestParams.get("ullon");
+        double QB_lrlon = requestParams.get("lrlon");
+        double QB_ullat = requestParams.get("ullat");
+        double QB_lrlat = requestParams.get("lrlat");
+        double QB_width = requestParams.get("w");
+
+        double lonDPPQueryBox = lonDPP(QB_ullon, QB_lrlon, QB_width);
+        int depth = depth(lonDPPQueryBox);
+
+        System.out.println("DEPTH: " + depth);
+        System.out.println("TESTING...");
+
+        // Tile indices.
+        int minX = lonTileIdx(QB_ullon, depth);
+        int maxX = lonTileIdx(QB_lrlon, depth);
+        int minY = latTileIdx(QB_ullat, depth);
+        int maxY = latTileIdx(QB_lrlat, depth);
+
+        System.out.println("Lon: " + minX + " to " + maxX);
+        System.out.println("Lat: " + minY + " to " + maxY);
+
+        int xTiles = maxX - minX + 1;
+        int yTiles = maxY - minY + 1;
+        String[][] render_grid = new String[yTiles][xTiles];
+        //String[][] render_grid = new String[][]{
+        //    {"d2_x0_y1.png", "d2_x1_y1.png", "d2_x2_y1.png", "d2_x3_y1.png"},
+        //    {"d2_x0_y2.png", "d2_x1_y2.png", "d2_x2_y2.png", "d2_x3_y2.png"},
+        //    {"d2_x0_y3.png", "d2_x1_y3.png", "d2_x2_y3.png", "d2_x3_y3.png"}
+        //};
+
+        int x, y;
+        for (int i = 0; i < yTiles; i++) {
+            y = minY + i;
+            for (int j = 0; j < xTiles; j++) {
+                x = minX + j;
+                String img = "d" + depth + "_x" + x + "_y" + y + ".png";
+                System.out.println(img);
+                render_grid[i][j] = img;
+            }
+        }
+
+        System.out.println(render_grid);
+
+        results.put("render_grid", render_grid);
+        results.put("raster_ul_lon", -122.2998046875);
+        results.put("raster_ul_lat", 37.87484726881516);
+        results.put("raster_lr_lon", -122.2119140625);
+        results.put("raster_lr_lat", 37.82280243352756);
+        results.put("depth", depth);
+        results.put("query_success", querySuccess);
+
         return results;
     }
 
@@ -156,6 +216,7 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
 
         for (int r = 0; r < numVertTiles; r += 1) {
             for (int c = 0; c < numHorizTiles; c += 1) {
+                System.out.println("Getting image: " + Constants.IMG_ROOT + renderGrid[r][c]);
                 graphic.drawImage(getImage(Constants.IMG_ROOT + renderGrid[r][c]), x, y, null);
                 x += Constants.TILE_SIZE;
                 if (x >= img.getWidth()) {
@@ -212,5 +273,76 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
             }
         }
         return tileImg;
+    }
+
+    /** */
+    private double lonDPP(double ullon, double lrlon, double width) {
+        return (lrlon - ullon) / width;
+    }
+
+    /** */
+    private int depth(double lonDPPQueryBox) {
+        int d;
+        double lonDPPImg, width;
+
+        for (d = 0; d <= MAX_DEPTH; d++) {
+            width = TILE_SIZE * Math.pow(2, d);
+            lonDPPImg = lonDPP(ROOT_ULLON, ROOT_LRLON, width);
+            if (lonDPPImg <= lonDPPQueryBox) {
+                break;
+            }
+        }
+
+        return d;
+    }
+
+    /** Calculates the longitudinal tile index between 0 and 2^depth -1 in which
+      * the given longitudinal coordinate resides. If the coordinate is out of
+      * bounds then the index of the nearest tile is given. */
+    private int lonTileIdx(double lon, int depth) {
+        if (lon < ROOT_ULLON) {
+            return 0;
+        }
+        if (lon > ROOT_LRLON) {
+            return (int) Math.pow(2, depth) - 1;
+        }
+        double lonTileWidth = Math.abs((ROOT_LRLON - ROOT_ULLON) / Math.pow(2, depth));
+        int result = (int) (Math.abs(lon - ROOT_ULLON) / lonTileWidth); // floor div.
+        return result;
+    }
+
+    /** Calculates the latitudinal tile index between 0 and 2^depth -1 in which
+      * the given latitudinal coordinate resides. If the coordinate is out of
+      * bounds then the index of the nearest tile is given. */
+    private int latTileIdx(double lat, int depth) {
+        if (lat > ROOT_ULLAT) {
+            return 0;
+        }
+        if (lat < ROOT_LRLAT) {
+            return (int) Math.pow(2, depth) - 1;
+        }
+        double latTileHeight = Math.abs((ROOT_LRLAT - ROOT_ULLAT) / Math.pow(2, depth));
+        int result = (int) (Math.abs(lat - ROOT_ULLAT) / latTileHeight); // floor div.
+        return result;
+    }
+
+    /** */
+    private boolean validateRequest(Map<String, Double> requestParams) {
+        double ullon = requestParams.get("ullon");
+        double lrlon = requestParams.get("lrlon");
+        double ullat = requestParams.get("ullat");
+        double lrlat = requestParams.get("lrlat");
+        double width = requestParams.get("w");
+        double height = requestParams.get("h");
+
+        // Invalid query box
+        if (ullon > lrlon || ullat < lrlat) {
+            return false;
+        }
+        // Query box completely outside map area.
+        if (lrlon < ROOT_ULLON || ullon > ROOT_LRLON || lrlat > ROOT_ULLAT || ullat < ROOT_LRLAT) {
+            return false;
+        }
+        return true;
     }
 }
