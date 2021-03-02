@@ -92,61 +92,15 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
     public Map<String, Object> processRequest(Map<String, Double> requestParams, Response response) {
         System.out.println("yo, wanna know the parameters given by the web browser? They are:");
         System.out.println(requestParams);
-        Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
-                + "your browser.");
 
+        MapRaster raster = new MapRaster(requestParams);
         boolean querySuccess = validateRequest(requestParams);
-        // Query box...
-        double QB_ullon = requestParams.get("ullon");
-        double QB_lrlon = requestParams.get("lrlon");
-        double QB_ullat = requestParams.get("ullat");
-        double QB_lrlat = requestParams.get("lrlat");
-        double QB_width = requestParams.get("w");
 
-        double lonDPPQueryBox = lonDPP(QB_ullon, QB_lrlon, QB_width);
-        int depth = depth(lonDPPQueryBox);
+        System.out.println(raster);
+        System.out.println(raster.results());
 
-        System.out.println("DEPTH: " + depth);
-        System.out.println("TESTING...");
+        Map<String, Object> results = raster.results();
 
-        // Tile indices.
-        int minX = lonTileIdx(QB_ullon, depth);
-        int maxX = lonTileIdx(QB_lrlon, depth);
-        int minY = latTileIdx(QB_ullat, depth);
-        int maxY = latTileIdx(QB_lrlat, depth);
-
-        System.out.println("Lon: " + minX + " to " + maxX);
-        System.out.println("Lat: " + minY + " to " + maxY);
-
-        int xTiles = maxX - minX + 1;
-        int yTiles = maxY - minY + 1;
-        String[][] render_grid = new String[yTiles][xTiles];
-        //String[][] render_grid = new String[][]{
-        //    {"d2_x0_y1.png", "d2_x1_y1.png", "d2_x2_y1.png", "d2_x3_y1.png"},
-        //    {"d2_x0_y2.png", "d2_x1_y2.png", "d2_x2_y2.png", "d2_x3_y2.png"},
-        //    {"d2_x0_y3.png", "d2_x1_y3.png", "d2_x2_y3.png", "d2_x3_y3.png"}
-        //};
-
-        int x, y;
-        for (int i = 0; i < yTiles; i++) {
-            y = minY + i;
-            for (int j = 0; j < xTiles; j++) {
-                x = minX + j;
-                String img = "d" + depth + "_x" + x + "_y" + y + ".png";
-                System.out.println(img);
-                render_grid[i][j] = img;
-            }
-        }
-
-        System.out.println(render_grid);
-
-        results.put("render_grid", render_grid);
-        results.put("raster_ul_lon", -122.2998046875);
-        results.put("raster_ul_lat", 37.87484726881516);
-        results.put("raster_lr_lon", -122.2119140625);
-        results.put("raster_lr_lat", 37.82280243352756);
-        results.put("depth", depth);
         results.put("query_success", querySuccess);
 
         return results;
@@ -275,55 +229,12 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         return tileImg;
     }
 
-    /** */
-    private double lonDPP(double ullon, double lrlon, double width) {
+    /** MY HELPER FUNCTIONS */
+
+    /** Calculates the longitudinal distance per pixel given the width in 
+      * pixels and the upper-left and lower-right longitudinal coords. */
+    private static double lonDPP(double ullon, double lrlon, double width) {
         return (lrlon - ullon) / width;
-    }
-
-    /** */
-    private int depth(double lonDPPQueryBox) {
-        int d;
-        double lonDPPImg, width;
-
-        for (d = 0; d <= MAX_DEPTH; d++) {
-            width = TILE_SIZE * Math.pow(2, d);
-            lonDPPImg = lonDPP(ROOT_ULLON, ROOT_LRLON, width);
-            if (lonDPPImg <= lonDPPQueryBox) {
-                break;
-            }
-        }
-
-        return d;
-    }
-
-    /** Calculates the longitudinal tile index between 0 and 2^depth -1 in which
-      * the given longitudinal coordinate resides. If the coordinate is out of
-      * bounds then the index of the nearest tile is given. */
-    private int lonTileIdx(double lon, int depth) {
-        if (lon < ROOT_ULLON) {
-            return 0;
-        }
-        if (lon > ROOT_LRLON) {
-            return (int) Math.pow(2, depth) - 1;
-        }
-        double lonTileWidth = Math.abs((ROOT_LRLON - ROOT_ULLON) / Math.pow(2, depth));
-        int result = (int) (Math.abs(lon - ROOT_ULLON) / lonTileWidth); // floor div.
-        return result;
-    }
-
-    /** Calculates the latitudinal tile index between 0 and 2^depth -1 in which
-      * the given latitudinal coordinate resides. If the coordinate is out of
-      * bounds then the index of the nearest tile is given. */
-    private int latTileIdx(double lat, int depth) {
-        if (lat > ROOT_ULLAT) {
-            return 0;
-        }
-        if (lat < ROOT_LRLAT) {
-            return (int) Math.pow(2, depth) - 1;
-        }
-        double latTileHeight = Math.abs((ROOT_LRLAT - ROOT_ULLAT) / Math.pow(2, depth));
-        int result = (int) (Math.abs(lat - ROOT_ULLAT) / latTileHeight); // floor div.
-        return result;
     }
 
     /** */
@@ -344,5 +255,226 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
             return false;
         }
         return true;
+    }
+
+    /** HELPER CLASSES */
+
+    private class MapRaster {
+        private QueryBox qb;
+        private int depth;
+        private double ullon, lrlon, ullat, lrlat;
+        private String[][] renderGrid;
+        private Map<String, Object> results;
+
+        private int minX, minY, maxX, maxY, xTiles, yTiles;
+
+        public MapRaster(Map<String, Double> requestParams) {
+            qb = new QueryBox(requestParams);
+
+            depth = calcDepth();
+
+            // Tile indices.
+            minX = xIndex(qb.ullon(), depth);
+            maxX = xIndex(qb.lrlon(), depth);
+            minY = yIndex(qb.ullat(), depth);
+            maxY = yIndex(qb.lrlat(), depth);
+            xTiles = maxX - minX + 1;
+            yTiles = maxY - minY + 1;
+
+            // Coords.
+            ullon = calcUllon();
+            lrlon = calcLrlon();
+            ullat = calcUllat();
+            lrlat = calcLrlat();
+
+            // Image filenames.
+            renderGrid = generateRenderGrid();
+
+            results = generateResults();
+        }
+
+        public int depth() {
+            return depth;
+        }
+        public double ullon() {
+            return ullon;
+        }
+        public double ullat() {
+            return ullat;
+        }
+        public double lrlon() {
+            return lrlon;
+        }
+        public double lrlat() {
+            return lrlat;
+        }
+        public String[][] renderGrid() {
+            return renderGrid;
+        }
+        public Map<String, Object> results() {
+            return results;
+        }
+
+        @Override
+        public String toString() {
+            String s = "RASTER:\n" +
+                ">\tdepth = " + depth() + "\n" +
+                ">\tullon = " + ullon() + "\n" +
+                ">\tullat = " + ullat() + "\n" +
+                ">\tlrlon = " + lrlon() + "\n" +
+                ">\tlrlat = " + lrlat() + "\n" +
+                ">\trenderGrid = " + renderGrid() + "\n" +
+                ">\tquerySuccess = " + "TODO...";
+            return s;
+        }
+
+        /** HELPER FUNCTIONS */
+
+        /** Calculates the depth of the raster between 0 and MAX_DEPTH given the
+          * longitudinal distance per pixel of the query box. */
+        private int calcDepth() {
+            int d;
+            double lonDPPImg, widthInPx;
+            for (d = 0; d <= MAX_DEPTH; d++) {
+                widthInPx = TILE_SIZE * Math.pow(2, d);
+                lonDPPImg = RasterAPIHandler.lonDPP(ROOT_ULLON, ROOT_LRLON, widthInPx);
+                if (lonDPPImg <= qb.lonDPP()) {
+                    break;
+                }
+            }
+            return d;
+        }
+
+        /** */
+        private double calcUllon() {
+            int indent = minX;
+            return calcCoord(ROOT_ULLON, ROOT_LRLON, indent);
+        }
+        /** */
+        private double calcLrlon() {
+            int indent = maxX + 1;
+            return calcCoord(ROOT_ULLON, ROOT_LRLON, indent);
+        }
+        /** */
+        private double calcUllat() {
+            int indent = minY;
+            return calcCoord(ROOT_ULLAT, ROOT_LRLAT, indent);
+        }
+        /** */
+        private double calcLrlat() {
+            int indent = maxY + 1;
+            return calcCoord(ROOT_ULLAT, ROOT_LRLAT, indent);
+        }
+        /** Calculates a tile corner coordinate given the upper-left and 
+          * lower-right root coordinates and the number of tile lengths that
+          * the corner is from the upper-left root. */
+        private double calcCoord(double rootUL, double rootLR, int tileIndent) {
+            double mapLength = rootLR - rootUL;
+            double tileLength = mapLength / Math.pow(2, depth());
+            double coord = rootUL + tileIndent * tileLength;
+            return coord;
+        }
+
+        /** Generate a 2d array of map image filenames ordered by x and y
+          * indices. */
+        private String[][] generateRenderGrid() {
+            String[][] render_grid = new String[yTiles][xTiles];
+            for (int y = minY; y <= maxY; y++) {
+                for (int x = minX; x <= maxX; x++) {
+                    String img = "d" + depth() + "_x" + x + "_y" + y + ".png";
+                    render_grid[y - minY][x - minX] = img;
+                }
+            }
+            return render_grid;
+        }
+
+        /** Generates a results Map as required by the specification in
+          * processRequests. */
+        private Map<String, Object> generateResults() {
+            Map<String, Object> results = new HashMap<>();
+            results.put("render_grid", renderGrid());
+            results.put("raster_ul_lon", ullon());
+            results.put("raster_ul_lat", ullat());
+            results.put("raster_lr_lon", lrlon());
+            results.put("raster_lr_lat", lrlat());
+            results.put("depth", depth());
+            results.put("query_success", true);
+            return results;
+        }
+
+        /** Calculates the maximum x (longitudinal) or y (latitudinal) tile
+          * index at a given depth. */
+        private int maxIndex(int depth) {
+            return (int) Math.pow(2, depth) - 1;
+        }
+
+        /** Calculates the x (longitudinal) tile index between 0 and 2^depth -1
+          * in which the given longitudinal coordinate resides. If the
+          * coordinate is out of bounds then the index of the nearest tile is
+          * given. */
+        private int xIndex(double lon, int depth) {
+            return tileIndex(lon, ROOT_ULLON, ROOT_LRLON, depth);
+        }
+
+        /** Calculates the y (latitudinal) tile index between 0 and 2^depth -1
+          * in which the given latitudinal coordinate resides. If the
+          * coordinate is out of bounds then the index of the nearest tile is
+          * given. */
+        private int yIndex(double lat, int depth) {
+            return tileIndex(lat, ROOT_ULLAT, ROOT_LRLAT, depth);
+        }
+
+        /** Calculates the tile index in which a coordinate falls given its
+          * position relative to the upper left corner of the raster area.
+          * A coordinate outside of the raster area returns the nearest tile
+          * index. */
+        private int tileIndex(double coord, double rootUL, double rootLR, int depth) {
+            if (Math.abs(coord) > Math.abs(rootUL)) {
+                return 0;
+            }
+            if (Math.abs(coord) < Math.abs(rootLR)) {
+                return maxIndex(depth);
+            }
+            double rasterSize = Math.abs(rootLR - rootUL);
+            double tileSize = rasterSize / Math.pow(2, depth);
+            double coordDist = Math.abs(coord - rootUL);
+            int result = (int) (coordDist / tileSize); // floor div.
+            return result;
+        }
+
+        private class QueryBox {
+            private double ullon, lrlon, ullat, lrlat, width, height;
+
+            QueryBox(Map<String, Double> requestParams) {
+                ullon = requestParams.get("ullon");
+                lrlon = requestParams.get("lrlon");
+                ullat = requestParams.get("ullat");
+                lrlat = requestParams.get("lrlat");
+                width = requestParams.get("w");
+                height = requestParams.get("h");
+            }
+
+            private double ullon() {
+                return ullon;
+            }
+            private double lrlon() {
+                return lrlon;
+            }
+            private double ullat() {
+                return ullat;
+            }
+            private double lrlat() {
+                return lrlat;
+            }
+            private double width() {
+                return width;
+            }
+            private double height() {
+                return height;
+            }
+            private double lonDPP() {
+                return RasterAPIHandler.lonDPP(ullon, lrlon, width);
+            }
+        }
     }
 }
