@@ -90,20 +90,13 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      */
     @Override
     public Map<String, Object> processRequest(Map<String, Double> requestParams, Response response) {
-        System.out.println("yo, wanna know the parameters given by the web browser? They are:");
+        System.out.println("Parameters given by the web browser:");
         System.out.println(requestParams);
 
         MapRaster raster = new MapRaster(requestParams);
-        boolean querySuccess = validateRequest(requestParams);
-
         System.out.println(raster);
-        System.out.println(raster.results());
 
-        Map<String, Object> results = raster.results();
-
-        results.put("query_success", querySuccess);
-
-        return results;
+        return raster.results();
     }
 
     @Override
@@ -170,7 +163,7 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
 
         for (int r = 0; r < numVertTiles; r += 1) {
             for (int c = 0; c < numHorizTiles; c += 1) {
-                System.out.println("Getting image: " + Constants.IMG_ROOT + renderGrid[r][c]);
+                //System.out.println("Getting image: " + Constants.IMG_ROOT + renderGrid[r][c]);
                 graphic.drawImage(getImage(Constants.IMG_ROOT + renderGrid[r][c]), x, y, null);
                 x += Constants.TILE_SIZE;
                 if (x >= img.getWidth()) {
@@ -229,34 +222,6 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         return tileImg;
     }
 
-    /** MY HELPER FUNCTIONS */
-
-    /** Calculates the longitudinal distance per pixel given the width in 
-      * pixels and the upper-left and lower-right longitudinal coords. */
-    private static double lonDPP(double ullon, double lrlon, double width) {
-        return (lrlon - ullon) / width;
-    }
-
-    /** */
-    private boolean validateRequest(Map<String, Double> requestParams) {
-        double ullon = requestParams.get("ullon");
-        double lrlon = requestParams.get("lrlon");
-        double ullat = requestParams.get("ullat");
-        double lrlat = requestParams.get("lrlat");
-        double width = requestParams.get("w");
-        double height = requestParams.get("h");
-
-        // Invalid query box
-        if (ullon > lrlon || ullat < lrlat) {
-            return false;
-        }
-        // Query box completely outside map area.
-        if (lrlon < ROOT_ULLON || ullon > ROOT_LRLON || lrlat > ROOT_ULLAT || ullat < ROOT_LRLAT) {
-            return false;
-        }
-        return true;
-    }
-
     /** HELPER CLASSES */
 
     private class MapRaster {
@@ -264,12 +229,14 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         private int depth;
         private double ullon, lrlon, ullat, lrlat;
         private String[][] renderGrid;
+        private boolean querySuccess;
         private Map<String, Object> results;
 
         private int minX, minY, maxX, maxY, xTiles, yTiles;
 
         public MapRaster(Map<String, Double> requestParams) {
             qb = new QueryBox(requestParams);
+            querySuccess = validateQueryBox();
 
             depth = calcDepth();
 
@@ -311,6 +278,9 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         public String[][] renderGrid() {
             return renderGrid;
         }
+        public boolean querySuccess() {
+            return querySuccess;
+        }
         public Map<String, Object> results() {
             return results;
         }
@@ -324,20 +294,26 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
                 ">\tlrlon = " + lrlon() + "\n" +
                 ">\tlrlat = " + lrlat() + "\n" +
                 ">\trenderGrid = " + renderGrid() + "\n" +
-                ">\tquerySuccess = " + "TODO...";
+                ">\tquerySuccess = " + querySuccess();
             return s;
         }
 
         /** HELPER FUNCTIONS */
+
+        /** Calculates the longitudinal distance per pixel given the width in 
+          * pixels and the upper-left and lower-right longitudinal coords. */
+        private double calcLonDPP(double ullon, double lrlon, double width) {
+            return (lrlon - ullon) / width;
+        }
 
         /** Calculates the depth of the raster between 0 and MAX_DEPTH given the
           * longitudinal distance per pixel of the query box. */
         private int calcDepth() {
             int d;
             double lonDPPImg, widthInPx;
-            for (d = 0; d <= MAX_DEPTH; d++) {
+            for (d = 0; d < MAX_DEPTH; d++) {
                 widthInPx = TILE_SIZE * Math.pow(2, d);
-                lonDPPImg = RasterAPIHandler.lonDPP(ROOT_ULLON, ROOT_LRLON, widthInPx);
+                lonDPPImg = calcLonDPP(ROOT_ULLON, ROOT_LRLON, widthInPx);
                 if (lonDPPImg <= qb.lonDPP()) {
                     break;
                 }
@@ -398,7 +374,7 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
             results.put("raster_lr_lon", lrlon());
             results.put("raster_lr_lat", lrlat());
             results.put("depth", depth());
-            results.put("query_success", true);
+            results.put("query_success", querySuccess());
             return results;
         }
 
@@ -442,6 +418,21 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
             return result;
         }
 
+        /** Checks that the QueryBox has valid dimensions and position. */
+        private boolean validateQueryBox() {
+            // Invalid query box.
+            if (qb.ullon() > qb.lrlon() || qb.ullat() < qb.lrlat() ||
+                    qb.width() <= 0 || qb.height() <= 0) {
+                return false;
+            }
+            // Query box completely outside map area.
+            if (qb.lrlon() < ROOT_ULLON || qb.ullon() > ROOT_LRLON ||
+                    qb.lrlat() > ROOT_ULLAT || qb.ullat() < ROOT_LRLAT) {
+                return false;
+            }
+            return true;
+        }
+
         private class QueryBox {
             private double ullon, lrlon, ullat, lrlat, width, height;
 
@@ -473,7 +464,7 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
                 return height;
             }
             private double lonDPP() {
-                return RasterAPIHandler.lonDPP(ullon, lrlon, width);
+                return calcLonDPP(ullon, lrlon, width);
             }
         }
     }

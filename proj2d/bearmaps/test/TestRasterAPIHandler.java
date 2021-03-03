@@ -159,4 +159,8 @@ public class TestRasterAPIHandler {
         return sj.toString();
     }
 
+    public static void main(String[] args) {
+        jh61b.junit.TestRunner.runTests("all", TestRasterAPIHandler.class);
+    }
+
 }

@@ -82,4 +82,8 @@ public class TestRouter {
         }
         return expected;
     }
+
+    public static void main(String[] args) {
+        jh61b.junit.TestRunner.runTests("all", TestRouter.class);
+    }
 }

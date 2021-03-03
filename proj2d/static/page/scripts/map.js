@@ -49,11 +49,13 @@ $(function() {
     var current_level = 0;
 
     /* Set server URIs */
-    if (document.location.hostname !== 'localhost') {
+    /*if (document.location.hostname !== 'localhost') {
         host = 'http://' + document.location.host;
     } else {
         host = 'http://localhost:4567';
-    }
+    }*/
+    host = 'http://localhost:4567';
+
     const raster_server = host + '/raster';
     const route_server = host + '/route';
     const clear_route = host + '/clear_route';

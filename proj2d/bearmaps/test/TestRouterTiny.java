@@ -67,4 +67,8 @@ public class TestRouterTiny {
         expected.add(55L);
         assertEquals(expected, actual);
     }
+
+    public static void main(String[] args) {
+        jh61b.junit.TestRunner.runTests("all", TestRouterTiny.class);
+    }
 }
