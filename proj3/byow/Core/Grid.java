@@ -1,25 +1,166 @@
 package byow.Core;
 
+import byow.TileEngine.TETile;
+import byow.TileEngine.Tileset;
 import static byow.Core.Constants.*;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 public class Grid {
+    private int width, height;
     private DirectedPoint[][] grid;
+    private TETile[][] tiles;
+
+    // TODO
+    private Map<Point, Edge<Point>> edgeTo;
 
     Grid(int width, int height) {
+        this.width = width;
+        this.height = height;
         grid = new DirectedPoint[width][height];
+        tiles = new TETile[width][height];
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 grid[x][y] = new DirectedPoint(x, y, null, -1);
+                tiles[x][y] = Tileset.NOTHING;
             }
         }
+        edgeTo = new HashMap<>();
     }
 
+    public TETile getTile(Point p) {
+        int x = p.getX();
+        int y = p.getY();
+        return tiles[x][y];
+    }
+
+    public void setTile(Point p, TETile tile) {
+        int x = p.getX();
+        int y = p.getY();
+        tiles[x][y] = tile;
+    }
+
+    public TETile[][] getTiles() {
+        return tiles;
+    }
+
+    /** Returns the Point at the given grid coordinates. */
     public DirectedPoint get(int x, int y) {
         return grid[x][y];
     }
+
+    /** Checks whether the given Point is within the boundaries of the Grid. */
+    private boolean validPoint(Point p) {
+        int x = p.getX();
+        int y = p.getY();
+        if (x >= width || x < 0) {
+            return false;
+        }
+        if (y >= height || y < 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /** Returns a List of Points surrounding the given Point in the given
+      * directions. */
+    private List<Point> neighbours(Point p, Direction[] dirs) {
+        int px = p.getX();
+        int py = p.getY();
+        List<Point> result = new ArrayList<>();
+
+        for (Direction dir : dirs) {
+            int nx = px + dir.getX();
+            int ny = py + dir.getY();
+            Point neighbour = new Point(nx, ny);
+            if (validPoint(neighbour)) {
+                result.add(neighbour);
+            }
+        }
+
+        return result;
+    }
+
+    /** Returns 4 Points directly above, below and to the left and right of the
+      * given Point, if they are within the Grid boundary. */
+    public List<Point> exits(Point p) {
+        Direction[] dirs = new Direction[] {
+            Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT
+        };
+        return neighbours(p, dirs);
+    }
+
+    /** Returns the 8 Points directly surrounding a given Point, if they are 
+     * within the Grid boundary. */
+    public List<Point> surrounding(Point p) {
+        Direction[] dirs = new Direction[] {
+            Direction.UP_LEFT, Direction.UP, Direction.UP_RIGHT,
+            Direction.LEFT, Direction.RIGHT,
+            Direction.DOWN_LEFT, Direction.DOWN, Direction.DOWN_RIGHT
+        };
+        return neighbours(p, dirs);
+    }
+
+    /** Returns the 5 Points directly ahead and to the sides of the given Point
+      * relative to the Direction of travel, if they are within the Grid
+      * boundary. */
+    public List<Point> ahead(Point p, Direction d) {
+        Direction[] dirs;
+        switch(d) {
+            case UP:
+                dirs = new Direction[] {
+                    Direction.UP_LEFT, Direction.UP, Direction.UP_RIGHT,
+                    Direction.LEFT, Direction.RIGHT
+                };
+                break;
+            case DOWN:
+                dirs = new Direction[] {
+                    Direction.DOWN_LEFT, Direction.DOWN, Direction.DOWN_RIGHT,
+                    Direction.LEFT, Direction.RIGHT
+                };
+                break;
+            case LEFT:
+                dirs = new Direction[] {
+                    Direction.UP_LEFT, Direction.LEFT, Direction.DOWN_LEFT,
+                    Direction.UP, Direction.DOWN
+                };
+                break;
+            case RIGHT:
+                dirs = new Direction[] {
+                    Direction.UP_RIGHT, Direction.RIGHT, Direction.DOWN_RIGHT,
+                    Direction.UP, Direction.DOWN
+                };
+                break;
+            default:
+                throw new IllegalArgumentException(
+                        "ahead(): The given direction must be UP, DOWN, LEFT " +
+                        "or RIGHT. Given '" + d + "'.");
+        }
+        return neighbours(p, dirs);
+    }
+
+    /** Returns true if the 5 Points ahead of the given point fall within the
+     * Grid boundary and are not already navigable. */
+    private boolean canExtendPath(Point p, Direction d) {
+        List<Point> pointsAhead = ahead(p, d);
+        // Any Points outside Grid?
+        if (pointsAhead.size() < 5) {
+            return false;
+        }
+        for (Point a : pointsAhead) {
+            if (a.navigable()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+/***************************************/
+
 
     public List<DirectedPoint> surrounding(DirectedPoint p) {
         int x = p.getX();
