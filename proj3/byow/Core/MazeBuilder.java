@@ -1,7 +1,13 @@
 package byow.Core;
 
 import byow.TileEngine.Tileset;
+import byow.TileEngine.TERenderer;
+import static byow.Core.Constants.*;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Random;
 
@@ -13,51 +19,80 @@ public class MazeBuilder {
     private int iterations = 0; // iterations
     private int maxIterations;
 
+    //TODO
+    private Map<Point, Edge> edgeTo;
+
     /** Defaults to no iteration limit. */
-    MazeBuilder(Grid grid) {
+    public MazeBuilder(Grid grid) {
         this(grid, -1);
     }
 
-    MazeBuilder(Grid grid, int maxIterations) {
+    public MazeBuilder(Grid grid, int maxIterations) {
         this.grid = grid;
         this.maxIterations = maxIterations;
-        fringe = new PriorityQueue<Point>((a, b)->b.getPriority()-a.getPriority());
+        // Compare Points in PQ by their priority field.
+        Comparator<Point> pqComparator = (a, b) -> b.getPriority() - a.getPriority();
+        fringe = new PriorityQueue<>(pqComparator);
+        edgeTo = new HashMap<>();
     }
 
     /** Builds a maze starting from the point at the given coords. */
-    private void buildMaze(int x, int y) {
-        Point start = grid.get(1, 1);
+    public void buildMaze(int x, int y) {
+        //grid.validatePoint(x, y);
+        Point start = grid.get(x, y);
         fringe.add(start);
         buildMaze();
     }
 
-    /** Recursive helper method. */
-    private void buildMaze() {
-        iterations++;
-        if (reachedIterationLimit()) {
-            return;
+    /** Iterative helper method. */
+    public void buildMaze() {
+        while (!reachedIterationLimit() && !fringe.isEmpty()) {
+            iterations++;
+            Point p = fringe.remove();
+            System.out.println("* Process: " + p);
+            process(p);
+            //System.out.println("  >>> FRINGE:\n      " + fringe + "\n");
+            System.out.println("  >>> FRINGE LENGTH: " + fringe.size());
+            System.out.println("  >>> FRINGE HEAD: " + fringe.peek() + "\n");
         }
-        if (fringe.isEmpty()) {
-            return;
-        }
-        Point p = fringe.remove();
-        System.out.println("* Process: " + p);
-        process(p);
-        System.out.println("  >>> FRINGE:\n      " + fringe + "\n");
-        buildMaze();
     }
+//    /** Recursive helper method. */
+//    private void buildMaze() {
+//        iterations++;
+//        if (reachedIterationLimit()) {
+//            return;
+//        }
+//        if (fringe.isEmpty()) {
+//            return;
+//        }
+//        Point p = fringe.remove();
+//        System.out.println("* Process: " + p);
+//        process(p);
+//        //System.out.println("  >>> FRINGE:\n      " + fringe + "\n");
+//        System.out.println("  >>> FRINGE LENGTH: " + fringe.size());
+//        System.out.println("  >>> FRINGE HEAD: " + fringe.peek() + "\n");
+//        buildMaze();
+//    }
 
     private void process(Point p) {
-        int x = p.getX();
-        int y = p.getY();
+        System.out.print("CHECK CONSISTENCY: ");
+        boolean check = p == grid.get(p.getX(), p.getY());
+        System.out.println(check ? "OK" : "FAIL");
 
-        // pathway clear?
-        if (p.getDirection() != null && !clearAhead(p)) {
+
+
+        Edge e = edgeTo.get(p);
+
+        // Cease processing if the route ahead is not clear.
+        // TODO don't like this null check
+        if (e != null && !clearAhead(p)) {
             return;
         }
 
         grid.setTile(p, Tileset.FLOOR);
         p.visit();
+        System.out.println(p);
+        System.out.println(grid.get(p.getX(), p.getY()));
 
         for (Point s : grid.surrounding(p)) {
             if (!s.visited()) {
@@ -71,8 +106,44 @@ public class MazeBuilder {
             }
             exit.setPriority(RANDOM.nextInt());
             System.out.println("      >>> Add to fringe: " + exit);
+            Edge edgeToExit = new Edge(p, exit);
+            edgeTo.put(exit, edgeToExit);
             fringe.add(exit);
+            System.out.print("CHECK CONSISTENCY: ");
+            check = exit == grid.get(exit.getX(), exit.getY());
+            System.out.println(check ? "OK" : "FAIL");
         }
+        update();
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException excpt) {
+            excpt.printStackTrace();
+        }
+    }
+
+    private boolean clearAhead(Point p) {
+        Edge e = edgeTo.get(p);
+        Direction dir = e.direction();
+        List<Point> ahead = grid.ahead(p, dir);
+        //TODO verify in bounds
+        if (ahead.size() < 5) {
+            return false;
+        }
+        System.out.println("AHEAD = " + ahead);
+
+        if (ahead == null) {
+            System.out.println("  >>> clearAhead() of " + p + ": " + false);
+            return false;
+        }
+        for (Point a : ahead) {
+            System.out.println("checking... " + a);
+            if (a.getTile().equals(Tileset.FLOOR)) {
+                System.out.println("  >>> clearAhead() of " + p + ": " + false);
+                return false;
+            }
+        }
+        System.out.println("  >>> clearAhead() of " + p + ": " + true);
+        return true;
     }
 
     private boolean reachedIterationLimit() {
@@ -80,5 +151,34 @@ public class MazeBuilder {
             return false;
         }
         return true;
+    }
+
+    /** HELPER METHODS */
+
+
+
+    /** END OF HELPER METHODS */
+
+    /** Draws the world to screen. */
+    private TERenderer ter;
+    private void draw() {
+        TERenderer ter = new TERenderer();
+        ter.initialize(WIDTH, HEIGHT);
+        ter.renderFrame(grid.getTiles());
+    }
+    private void start() {
+        ter = new TERenderer();
+        ter.initialize(WIDTH, HEIGHT);
+    }
+    private void update() {
+        ter.renderFrame(grid.getTiles());
+    }
+
+    public static void main(String[] args) {
+        Grid g = new Grid();
+        MazeBuilder mb = new MazeBuilder(g);
+        mb.start();
+        mb.buildMaze(1, 1);
+        //mb.draw();
     }
 }

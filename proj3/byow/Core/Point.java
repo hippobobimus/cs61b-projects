@@ -52,8 +52,16 @@ public class Point {
     public void visit() {
         visited = true;
     }
+    // TODO
     public boolean navigable() {
         return navigable;
+    }
+
+    @Override
+    public String toString() {
+        String s = "{" + getX() + ", " + getY() + ", " + getTile()
+            + ", priority=" + getPriority() + ", visited=" + visited() + "}";
+        return s;
     }
 }
 
