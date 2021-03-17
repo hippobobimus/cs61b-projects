@@ -11,116 +11,137 @@ import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Random;
 
+/** Uses a randomised Prim's algorithm to pseudo-randomly generate a connected
+  * maze that fills the available grid area. */
 public class MazeBuilder {
     private static final long SEED = 2873123;
     private static final Random RANDOM = new Random(SEED);
     private Grid grid;
+    private Point start;
     private PriorityQueue<Point> fringe;
-    private int iterations = 0; // iterations
-    private int maxIterations;
-
-    //TODO
     private Map<Point, Edge> edgeTo;
+    private int iterations = 0;
+    private int maxIterations;
+    private boolean animate = false;
+    private TERenderer ter;
 
+    /** CONSTRUCTORS ---------------------------------------------------------*/
+
+    /** Defaults to no iteration limit and no animation. */
+    public MazeBuilder(Grid grid, Point start) {
+        this(grid, start, -1, "", null);
+    }
     /** Defaults to no iteration limit. */
-    public MazeBuilder(Grid grid) {
-        this(grid, -1);
+    public MazeBuilder(Grid grid, Point start, String animate, TERenderer ter) {
+        this(grid, start, -1, animate, ter);
+    }
+    /** Defaults to no animation. */
+    public MazeBuilder(Grid grid, Point start, int maxIterations) {
+        this(grid, start, maxIterations, "", null);
+    }
+    /** If animate is specified a TERenderer must also be provided. */
+    public MazeBuilder(Grid grid, Point start, int maxIterations, String animate, TERenderer ter) {
+        this.grid = grid;
+        // TODO check start in grid and valid.
+        this.start = start;
+        this.maxIterations = maxIterations;
+        this.animate = animate.equals("animate") ? true : false;
+        this.ter = ter;
+        if (this.animate && ter == null) {
+            throw new IllegalArgumentException("When animating, a TERenderer" +
+                    "must be provided.");
+        }
+        // Compare Points in PQ by their priority field.
+        Comparator<Point> cmp = (a, b) -> b.getPriority() - a.getPriority();
+        fringe = new PriorityQueue<>(cmp);
+        edgeTo = new HashMap<>();
+
+        buildMaze(start);
     }
 
-    public MazeBuilder(Grid grid, int maxIterations) {
-        this.grid = grid;
-        this.maxIterations = maxIterations;
-        // Compare Points in PQ by their priority field.
-        Comparator<Point> pqComparator = (a, b) -> b.getPriority() - a.getPriority();
-        fringe = new PriorityQueue<>(pqComparator);
-        edgeTo = new HashMap<>();
-    }
+    /** PUBLIC METHODS -------------------------------------------------------*/
 
     /** Builds a maze starting from the point at the given coords. */
-    public void buildMaze(int x, int y) {
-        //grid.validatePoint(x, y);
-        Point start = grid.get(x, y);
+    public void buildMaze(Point start) {
+        // TODO grid.validatePoint(x, y);
         fringe.add(start);
         buildMaze();
     }
 
+    /** HELPER METHODS -------------------------------------------------------*/
+
     /** Iterative helper method. */
-    public void buildMaze() {
+    private void buildMaze() {
         while (!reachedIterationLimit() && !fringe.isEmpty()) {
             iterations++;
             Point p = fringe.remove();
             System.out.println("* Process: " + p);
             process(p);
             //System.out.println("  >>> FRINGE:\n      " + fringe + "\n");
-            System.out.println("  >>> FRINGE LENGTH: " + fringe.size());
-            System.out.println("  >>> FRINGE HEAD: " + fringe.peek() + "\n");
+            //System.out.println("  >>> FRINGE LENGTH: " + fringe.size());
+            //System.out.println("  >>> FRINGE HEAD: " + fringe.peek() + "\n");
         }
     }
-//    /** Recursive helper method. */
-//    private void buildMaze() {
-//        iterations++;
-//        if (reachedIterationLimit()) {
-//            return;
-//        }
-//        if (fringe.isEmpty()) {
-//            return;
-//        }
-//        Point p = fringe.remove();
-//        System.out.println("* Process: " + p);
-//        process(p);
-//        //System.out.println("  >>> FRINGE:\n      " + fringe + "\n");
-//        System.out.println("  >>> FRINGE LENGTH: " + fringe.size());
-//        System.out.println("  >>> FRINGE HEAD: " + fringe.peek() + "\n");
-//        buildMaze();
-//    }
 
+    /** */
     private void process(Point p) {
-        System.out.print("CHECK CONSISTENCY: ");
-        boolean check = p == grid.get(p.getX(), p.getY());
-        System.out.println(check ? "OK" : "FAIL");
-
-
-
-        Edge e = edgeTo.get(p);
-
         // Cease processing if the route ahead is not clear.
         // TODO don't like this null check
+        // TODO discard edge in edgeTo if not clear
+        Edge e = edgeTo.get(p);
         if (e != null && !clearAhead(p)) {
             return;
         }
 
-        grid.setTile(p, Tileset.FLOOR);
+        // mark visited and assign floor tile, surrounded by wall.
         p.visit();
-        System.out.println(p);
-        System.out.println(grid.get(p.getX(), p.getY()));
-
+        grid.setTile(p, Tileset.FLOOR);
         for (Point s : grid.surrounding(p)) {
             if (!s.visited()) {
                 grid.setTile(s, Tileset.WALL);
             }
         }
 
+        // add available unvisited exits to the fringe.
         for (Point exit : grid.exits(p)) {
             if (exit.visited()) {
                 continue;
             }
             exit.setPriority(RANDOM.nextInt());
-            System.out.println("      >>> Add to fringe: " + exit);
             Edge edgeToExit = new Edge(p, exit);
             edgeTo.put(exit, edgeToExit);
             fringe.add(exit);
-            System.out.print("CHECK CONSISTENCY: ");
-            check = exit == grid.get(exit.getX(), exit.getY());
-            System.out.println(check ? "OK" : "FAIL");
+            //System.out.println("      >>> Add to fringe: " + exit);
         }
-        update();
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException excpt) {
-            excpt.printStackTrace();
-        }
+        animateStep();
     }
 
+    private boolean carvable(Point p) {
+        if (p.equals(start)) {
+        }
+        Edge e = edgeTo.get(p);
+        Direction dir = e.direction();
+        List<Point> ahead = grid.ahead(p, dir);
+        //TODO verify in bounds
+        if (ahead.size() < 5) {
+            return false;
+        }
+        System.out.println("AHEAD = " + ahead);
+
+        if (ahead == null) {
+            System.out.println("  >>> clearAhead() of " + p + ": " + false);
+            return false;
+        }
+        for (Point a : ahead) {
+            System.out.println("checking... " + a);
+            if (a.getTile().equals(Tileset.FLOOR)) {
+                System.out.println("  >>> clearAhead() of " + p + ": " + false);
+                return false;
+            }
+        }
+        System.out.println("  >>> clearAhead() of " + p + ": " + true);
+        return true;
+    }
     private boolean clearAhead(Point p) {
         Edge e = edgeTo.get(p);
         Direction dir = e.direction();
@@ -146,6 +167,9 @@ public class MazeBuilder {
         return true;
     }
 
+    /** Checks the current iteration value against the set limit and returns
+      * true if it has been exceeded.
+      * A negative iteration limit is interpreted as no iteration limit. */
     private boolean reachedIterationLimit() {
         if (maxIterations < 0 || iterations < maxIterations) {
             return false;
@@ -153,32 +177,32 @@ public class MazeBuilder {
         return true;
     }
 
-    /** HELPER METHODS */
-
-
+    /** Updates the TERenderer with the current tile state, then pauses for
+      * 10ms. */
+    private void animateStep() {
+        if (!animate) {
+            return;
+        }
+        ter.renderFrame(grid.getTiles());
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     /** END OF HELPER METHODS */
 
-    /** Draws the world to screen. */
-    private TERenderer ter;
-    private void draw() {
+    /** Draws a maze to screen starting at (1,1). */
+    public static void main(String[] args) {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
-        ter.renderFrame(grid.getTiles());
-    }
-    private void start() {
-        ter = new TERenderer();
-        ter.initialize(WIDTH, HEIGHT);
-    }
-    private void update() {
-        ter.renderFrame(grid.getTiles());
-    }
-
-    public static void main(String[] args) {
         Grid g = new Grid();
-        MazeBuilder mb = new MazeBuilder(g);
-        mb.start();
-        mb.buildMaze(1, 1);
-        //mb.draw();
+        Point start = g.get(1, 1);
+
+        MazeBuilder mb = new MazeBuilder(g, start, "animate", ter);
+        ter.renderFrame(g.getTiles());
+
+        //mb.buildMaze(1, 1);
     }
 }

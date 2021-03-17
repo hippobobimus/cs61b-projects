@@ -8,6 +8,65 @@ import java.util.Set;
 import java.util.HashSet;
 
 public class TestDirection {
+    @Test
+    public void testFromAngle() {
+        assertEquals(Direction.RIGHT, Direction.from(0));
+        assertEquals(Direction.UP_RIGHT, Direction.from(45));
+        assertEquals(Direction.UP, Direction.from(90));
+        assertEquals(Direction.UP_LEFT, Direction.from(135));
+        assertEquals(Direction.LEFT, Direction.from(180));
+        assertEquals(Direction.DOWN_LEFT, Direction.from(225));
+        assertEquals(Direction.DOWN, Direction.from(270));
+        assertEquals(Direction.DOWN_RIGHT, Direction.from(315));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromIllegalMagnitudeAngle() {
+        Direction.from(40);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromIllegalNegativeAngle() {
+        Direction.from(-45);
+    }
+
+    @Test
+    public void testFromDeltaXY() {
+        assertEquals(Direction.RIGHT, Direction.from(1, 0));
+        assertEquals(Direction.UP_RIGHT, Direction.from(1, 1));
+        assertEquals(Direction.UP, Direction.from(0, 1));
+        assertEquals(Direction.UP_LEFT, Direction.from(-1, 1));
+        assertEquals(Direction.LEFT, Direction.from(-1, 0));
+        assertEquals(Direction.DOWN_LEFT, Direction.from(-1, -1));
+        assertEquals(Direction.DOWN, Direction.from(0, -1));
+        assertEquals(Direction.DOWN_RIGHT, Direction.from(1, -1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromDeltaXYIllegalX() {
+        Direction.from(2, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromDeltaXYIllegalY() {
+        Direction.from(0, 2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromDeltaXYIllegalNegativeX() {
+        Direction.from(-2, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromDeltaXYIllegalNegativeY() {
+        Direction.from(0, -2);
+    }
+
+
+
+
+
+
 
     @Test
     public void testListAhead() {
@@ -72,18 +131,6 @@ public class TestDirection {
 
         d = d.rotateAnticlockwise();
         assertEquals(Direction.UP, d);
-    }
-
-    @Test
-    public void testFromAngle() {
-        assertEquals(Direction.RIGHT, Direction.from(0));
-        assertEquals(Direction.UP_RIGHT, Direction.from(45));
-        assertEquals(Direction.UP, Direction.from(90));
-        assertEquals(Direction.UP_LEFT, Direction.from(135));
-        assertEquals(Direction.LEFT, Direction.from(180));
-        assertEquals(Direction.DOWN_LEFT, Direction.from(225));
-        assertEquals(Direction.DOWN, Direction.from(270));
-        assertEquals(Direction.DOWN_RIGHT, Direction.from(315));
     }
 
     public static void main(String[] args) {

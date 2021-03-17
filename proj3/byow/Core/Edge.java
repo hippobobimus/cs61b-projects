@@ -1,24 +1,50 @@
 package byow.Core;
 
+/**
+ * Representation of an immutable directed graph edge in 2D tile-space.
+ * @author Rob Masters
+ */
 public class Edge {
-    private Point p;
-    private Point q;
+    private Point start;
+    private Point end;
     private Direction direction;
 
-    public Edge(Point p, Point q) {
-        this.p = p;
-        this.q = q;
-        this.direction = Direction.from(p, q);
+    /* CONSTRUCTOR -----------------------------------------------------------*/
+
+    /** 
+     * Full constructor for a directed graph edge in 2D tile-space given x and y
+     * coordinates.
+     * @param x x-coordinate
+     * @param y y-coordinate
+     */
+    public Edge(Point start, Point end) {
+        this.start = start;
+        this.end = end;
+        this.direction = Direction.from(start, end);
     }
 
+    /* GETTERS ---------------------------------------------------------------*/
+
+    /**
+     * Point at which the edge originates.
+     * @return start point
+     */
     public Point from() {
-        return p;
+        return start;
     }
 
+    /**
+     * Point at which the edge terminates.
+     * @return end point
+     */
     public Point to() {
-        return q;
+        return end;
     }
 
+    /**
+     * Direction of the edge.
+     * @return direction object
+     */
     public Direction direction() {
         return direction;
     }
