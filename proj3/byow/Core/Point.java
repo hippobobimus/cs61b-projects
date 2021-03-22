@@ -11,11 +11,11 @@ public class Point {
     private int x;
     private int y;
     private TETile tile;
-    private boolean visited;
+    private boolean open;
     private boolean navigable; // TODO
     private int priority;
 
-    /** CONSTRUCTOR METHODS -------------------------------------------------*/
+    /* CONSTRUCTOR METHODS ---------------------------------------------------*/
 
     /** 
      * Full constructor for a Point in 2D tile-space given x and y coordinates,
@@ -28,7 +28,7 @@ public class Point {
     public Point(int x, int y, TETile tile, int priority) {
         this.x = x;
         this.y = y;
-        this.visited = false;
+        this.open = false;
         this.priority = priority;
         setTile(tile);
     }
@@ -53,7 +53,7 @@ public class Point {
         this(x, y, Tileset.NOTHING, 0);
     }
 
-    /** PUBLIC GETTERS AND SETTERS -------------------------------------------*/
+    /* PUBLIC GETTERS AND SETTERS --------------------------------------------*/
 
     /**
      * x-coordinate of the point.
@@ -107,18 +107,25 @@ public class Point {
     }
 
     /**
-     * Whether the point has been visited.
-     * @return visited
+     * Returns true if the point is open, false otherwise.
+     * @return open
      */
-    public boolean visited() {
-        return visited;
+    public boolean isOpen() {
+        return open;
     }
 
     /**
-     * Marks the point as having been visited.
+     * Marks the point as open.
      */
-    public void visit() {
-        visited = true;
+    public void open() {
+        open = true;
+    }
+
+    /**
+     * Marks the point as not open.
+     */
+    public void close() {
+        open = false;
     }
 
     // TODO is this required?
@@ -126,7 +133,7 @@ public class Point {
         return navigable;
     }
 
-    /** OVERRIDDEN METHODS ---------------------------------------------------*/
+    /* OVERRIDDEN METHODS ----------------------------------------------------*/
 
     /**
      * String representation of the point.
@@ -135,7 +142,7 @@ public class Point {
     @Override
     public String toString() {
         String s = "{" + getX() + ", " + getY() + ", " + getTile()
-            + ", priority=" + getPriority() + ", visited=" + visited() + "}";
+            + ", priority=" + getPriority() + ", open=" + isOpen() + "}";
         return s;
     }
 }

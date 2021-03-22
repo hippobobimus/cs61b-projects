@@ -1,22 +1,23 @@
 package byow.Core;
 
+import static byow.Core.Constants.*;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
-import static byow.Core.Constants.*;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Grid {
     private int width, height;
     private Point[][] grid;
     private TETile[][] tiles;
 
-    // TODO
-    private Map<Point, Edge> edgeTo;
+    // TODO 
+    //WeightedQuickUF<HashSet
+    //private Map<Point, Edge> edgeTo;
 
     Grid(int width, int height) {
         this.width = width;
@@ -29,7 +30,7 @@ public class Grid {
                 tiles[x][y] = Tileset.NOTHING;
             }
         }
-        edgeTo = new HashMap<>();
+        //edgeTo = new HashMap<>();
     }
 
     Grid() {
@@ -37,16 +38,37 @@ public class Grid {
     }
 
     public TETile getTile(Point p) {
+        // TODO check contains
         int x = p.getX();
         int y = p.getY();
         return tiles[x][y];
     }
 
     public void setTile(Point p, TETile tile) {
+        // TODO check contains
         int x = p.getX();
         int y = p.getY();
         tiles[x][y] = tile;
         p.setTile(tile);
+    }
+
+    public void setTile(int x, int y, TETile tile) {
+        // TODO check contains
+        Point p = get(x, y);
+        setTile(p, tile);
+    }
+
+    public void open(int x, int y) {
+        Point p = get(x, y);
+        open(p);
+    }
+
+    public void open(Point p) {
+        if (!contains(p)) {
+            throw new IllegalArgumentException();
+        }
+
+        p.open();
     }
 
     public TETile[][] getTiles() {
@@ -66,16 +88,41 @@ public class Grid {
         return grid[x][y];
     }
 
-    /** Checks whether the given Point is within the boundaries of the Grid. */
-    private boolean validPoint(Point p) {
+//    /** Checks whether the given Point is within the boundaries of the Grid. */
+//    private boolean validPoint(Point p) {
+//        int x = p.getX();
+//        int y = p.getY();
+//        if (x >= width || x < 0) {
+//            return false;
+//        }
+//        if (y >= height || y < 0) {
+//            return false;
+//        }
+//        return true;
+//    }
+
+    /**
+     * Determines whether the given point is contained within the grid.
+     * @param p point
+     */
+    public boolean contains(Point p) {
         int x = p.getX();
         int y = p.getY();
-        if (x >= width || x < 0) {
+
+        // Within coordinate bounds of grid?
+        if (x < 0 || x >= width) {
             return false;
         }
-        if (y >= height || y < 0) {
+        if (y < 0 || y >= height)  {
             return false;
         }
+
+        // Is the point in the grid at these coords equal to the point given?
+        Point pointAtCoords = get(x, y);
+        if (!p.equals(pointAtCoords)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -176,21 +223,21 @@ public class Grid {
         return neighbours(p, dirs);
     }
 
-    /** Returns true if the 5 Points ahead of the given point fall within the
-     * Grid boundary and are not already navigable. */
-    private boolean canExtendPath(Point p, Direction d) {
-        List<Point> pointsAhead = ahead(p, d);
-        // Any Points outside Grid?
-        if (pointsAhead.size() < 5) {
-            return false;
-        }
-        for (Point a : pointsAhead) {
-            if (a.navigable()) {
-                return false;
-            }
-        }
-        return true;
-    }
+//    /** Returns true if the 5 Points ahead of the given point fall within the
+//     * Grid boundary and are not already navigable. */
+//    private boolean canExtendPath(Point p, Direction d) {
+//        List<Point> pointsAhead = ahead(p, d);
+//        // Any Points outside Grid?
+//        if (pointsAhead.size() < 5) {
+//            return false;
+//        }
+//        for (Point a : pointsAhead) {
+//            if (a.navigable()) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
 
 /***************************************/

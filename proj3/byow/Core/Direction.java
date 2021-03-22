@@ -46,15 +46,13 @@ public enum Direction {
      * @param angle angle in degrees 
      */
     public static Direction from(int angle) {
-        if (angle % 45 != 0 || angle < 0) {
-            throw new IllegalArgumentException(
-                    "from(): The angle must be a non-negative multiple of 45" +
-                    "degrees. Given: " + angle + ".");
-        }
+        validateAngleParameter(angle);
+
         Direction result = stream()
             .filter(dir -> dir.getAngle() == angle)
             .findFirst()
             .orElse(null);
+
         return result;
     }
 
@@ -65,49 +63,71 @@ public enum Direction {
      * @param dy delta in y-axis 
      */
     public static Direction from(int dx, int dy) {
-        if (dx < -1 || dy < -1 || dx > 1 || dy > 1) {
-            throw new IllegalArgumentException(
-                    "from(): The values of dx and dy must between -1 and 1 " +
-                    "inclusive. Given: " + dx + ", " + dy + ".");
-        }
+        validateDeltaParameters(dx, dy);
+
         Direction result = stream()
             .filter(dir -> dir.getX() == dx && dir.getY() == dy)
             .findFirst()
             .orElse(null);
+
         return result;
     }
 
     /**
-     *
+     * Returns the direction corresponding to the given start and end points in.
+     * The points must be within an increment of 1 in both the x and y axes.
+     * @param start start point
+     * @param end end point
      */
     public static Direction from(Point start, Point end) {
         int dx = end.getX() - start.getX();
         int dy = end.getY() - start.getY();
+
         return from(dx, dy);
     }
 
     /* GETTERS ---------------------------------------------------------------*/
 
+    /**
+     * Delta value in x direction.
+     * @return delta x
+     */
     public int getX() {
         return dx;
     }
 
+    /**
+     * Delta value in y direction.
+     * @return delta y
+     */
     public int getY() {
         return dy;
     }
 
+    /**
+     * Angle of the direction in degrees.
+     * @return angle
+     */
     public int getAngle() {
         return angle;
     }
 
     /* DIRECTION LISTS -------------------------------*/
 
+    /**
+     * Returns a list of all directions.
+     * @return list of all directions
+     */
     public static List<Direction> listAll() {
         List<Direction> result = stream()
                                     .collect(Collectors.toList());
         return result;
     }
 
+    /**
+     * Returns a list of the cardinal directions (UP, DOWN, LEFT, RIGHT).
+     * @return list of cardinal directions
+     */
     public static List<Direction> listCardinal() {
         Predicate<Direction> exclude = d -> Math.abs(d.getX()) != Math.abs(d.getY());
         List<Direction> result = stream()
@@ -116,9 +136,13 @@ public enum Direction {
         return result;
     }
 
-    /** Returns a subset of the List of all Directions, excluding the opposite
-      * Direction and the two Directions found by rotating clockwise and 
-      * anticlockwise from the opposite Direction. */
+    /**
+     * Returns a subset of the list of all directions, excluding any in a
+     * backward direction from the current direction. Specifically, it excludes
+     * the opposite direction and the two directions found by rotating clockwise
+     * and anticlockwise from the opposite direction.
+     * @return list of directions 'ahead'
+     */
     public List<Direction> listAhead() {
         Direction opp = this.opposite();
         Direction opp_acw = opp.rotateAnticlockwise();
@@ -136,37 +160,97 @@ public enum Direction {
 
     /* DIRECTION TRANSFORMATIONS ---------------------------------------------*/
 
+    /**
+     * Returns the opposite direction to the current direction.
+     * @return opposite direction
+     */
     public Direction opposite() {
         return from(-this.getX(), -this.getY());
     }
 
+    /**
+     * Returns the direction that corresponds to rotating the current direction
+     * anticlockwise by 45 degrees.
+     * @return direction 45 degrees anticlockwise
+     */
     public Direction rotateAnticlockwise() {
         return rotateAnticlockwise(45);
     }
 
+    /**
+     * Returns the direction that corresponds to rotating the current direction
+     * clockwise by 45 degrees.
+     * @return direction 45 degrees clockwise
+     */
     public Direction rotateClockwise() {
         return rotateAnticlockwise(315);
     }
 
+    /**
+     * Takes an x coordinate and returns the x coordinate reached by adding the
+     * delta x value of the direction.
+     * @return x + delta-x of direction
+     */
     public int transformX(int x) {
         return x + getX();
     }
+
+    /**
+     * Takes an y coordinate and returns the y coordinate reached by adding the
+     * delta y value of the direction.
+     * @return y + delta-y of direction
+     */
     public int transformY(int y) {
         return y + getY();
     }
 
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
 
-    /** Transforms the direction by rotating it by 45 degrees. The argument
-      * supplied determines whether the rotation is anticlockwise (1) or 
-      * clockwise (-1). */
+    /**
+     * Returns a stream comprised of all possible directions.
+     * @return stream of all directions
+     */
+    private static Stream<Direction> stream() {
+        return Stream.of(Direction.values());
+    }
+
+    /**
+     * Checks that the given angle is a positive multiple of 45 and, if not,
+     * throws an exception.
+     * @param angle angle
+     */
+    private static void validateAngleParameter(int angle) {
+        if (angle % 45 != 0 || angle < 0) {
+            throw new IllegalArgumentException(
+                    "from(): The angle must be a non-negative multiple of 45" +
+                    "degrees. Given: " + angle + ".");
+        }
+    }
+
+    /**
+     * Checks that the given delta-x and delta-y are between -1 and 1 inclusive
+     * and, if not, throws an exception.
+     * @param dx delta-x
+     * @param dy delta-y
+     */
+    private static void validateDeltaParameters(int dx, int dy) {
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+            throw new IllegalArgumentException(
+                    "from(): The values of dx and dy must between -1 and 1 " +
+                    "inclusive. Given: " + dx + ", " + dy + ".");
+        }
+    }
+
+    /**
+     * Gets the new direction that corresponds to rotating the current direction
+     * anticlockwise by the specified number of degrees. The number of degrees
+     * must be a positive multiple of 45.
+     * @param degrees rotation in degrees
+     */
     private Direction rotateAnticlockwise(int degrees) {
+        validateAngleParameter(degrees);
         int newAngle = (this.getAngle() + degrees) % 360;
         Direction result = from(newAngle);
         return result;
-    }
-
-    private static Stream<Direction> stream() {
-        return Stream.of(Direction.values());
     }
 }

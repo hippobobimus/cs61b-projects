@@ -62,14 +62,69 @@ public class TestDirection {
         Direction.from(0, -2);
     }
 
+    @Test
+    public void testFromPoints() {
+        Point start = new Point(3, 9);
+        Point end = new Point(4, 10);
 
+        assertEquals(Direction.UP_RIGHT, Direction.from(start, end));
+    }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromPointsIllegalArgs() {
+        Point start = new Point(3, 9);
+        Point end = new Point(5, 10);
 
+        assertEquals(Direction.UP_RIGHT, Direction.from(start, end));
+    }
 
+    @Test
+    public void testGetters() {
+        Direction up = Direction.UP;
+        Direction down_left = Direction.DOWN_LEFT;
 
+        assertEquals(0, up.getX());
+        assertEquals(1, up.getY());
+        assertEquals(90, up.getAngle());
+
+        assertEquals(-1, down_left.getX());
+        assertEquals(-1, down_left.getY());
+        assertEquals(225, down_left.getAngle());
+    }
+
+    @Test
+    public void testListAll() {
+        Set<Direction> expected = new HashSet<>();
+        expected.add(Direction.RIGHT);
+        expected.add(Direction.UP_RIGHT);
+        expected.add(Direction.UP);
+        expected.add(Direction.UP_LEFT);
+        expected.add(Direction.LEFT);
+        expected.add(Direction.DOWN_LEFT);
+        expected.add(Direction.DOWN);
+        expected.add(Direction.DOWN_RIGHT);
+
+        Set<Direction> actual = new HashSet<>(Direction.listAll());
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testListCardinal() {
+        Set<Direction> expected = new HashSet<>();
+        expected.add(Direction.RIGHT);
+        expected.add(Direction.UP);
+        expected.add(Direction.LEFT);
+        expected.add(Direction.DOWN);
+
+        Set<Direction> actual = new HashSet<>(Direction.listCardinal());
+
+        assertEquals(expected, actual);
+    }
 
     @Test
     public void testListAhead() {
+        // cardinal directions
         Set<Direction> upExpected = new HashSet<>();
         upExpected.add(Direction.UP);
         upExpected.add(Direction.UP_LEFT);
@@ -107,6 +162,30 @@ public class TestDirection {
         assertEquals(downExpected, downActual);
         assertEquals(leftExpected, leftActual);
         assertEquals(rightExpected, rightActual);
+
+        // cardinal directions
+        Set<Direction> upRightExpected = new HashSet<>();
+        upRightExpected.add(Direction.UP_RIGHT);
+        upRightExpected.add(Direction.UP);
+        upRightExpected.add(Direction.RIGHT);
+        upRightExpected.add(Direction.UP_LEFT);
+        upRightExpected.add(Direction.DOWN_RIGHT);
+
+        Set<Direction> upRightActual = new HashSet<>(Direction.UP_RIGHT.listAhead());
+
+        assertEquals(upRightExpected, upRightActual);
+    }
+
+    @Test
+    public void testOpposite() {
+        assertEquals(Direction.RIGHT, Direction.LEFT.opposite());
+        assertEquals(Direction.UP_RIGHT, Direction.DOWN_LEFT.opposite());
+        assertEquals(Direction.UP, Direction.DOWN.opposite());
+        assertEquals(Direction.UP_LEFT, Direction.DOWN_RIGHT.opposite());
+        assertEquals(Direction.LEFT, Direction.RIGHT.opposite());
+        assertEquals(Direction.DOWN_LEFT, Direction.UP_RIGHT.opposite());
+        assertEquals(Direction.DOWN, Direction.UP.opposite());
+        assertEquals(Direction.DOWN_RIGHT, Direction.UP_LEFT.opposite());
     }
 
     @Test
@@ -131,6 +210,25 @@ public class TestDirection {
 
         d = d.rotateAnticlockwise();
         assertEquals(Direction.UP, d);
+    }
+
+    @Test
+    public void testTransformXY() {
+        Direction d1 = Direction.UP_RIGHT;
+
+        int x1 = 27;
+        int y1 = 92;
+
+        assertEquals(28, d1.transformX(x1));
+        assertEquals(93, d1.transformY(y1));
+
+        Direction d2 = Direction.UP_LEFT;
+
+        int x2 = 8;
+        int y2 = 12;
+
+        assertEquals(7, d2.transformX(x2));
+        assertEquals(13, d2.transformY(y2));
     }
 
     public static void main(String[] args) {
