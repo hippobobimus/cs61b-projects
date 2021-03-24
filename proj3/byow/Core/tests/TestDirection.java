@@ -1,4 +1,6 @@
-package byow.Core;
+package byow.Core.tests;
+
+import byow.Core.*;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -123,7 +125,7 @@ public class TestDirection {
     }
 
     @Test
-    public void testListAhead() {
+    public void testListArc() {
         // cardinal directions
         Set<Direction> upExpected = new HashSet<>();
         upExpected.add(Direction.UP);
@@ -153,10 +155,10 @@ public class TestDirection {
         rightExpected.add(Direction.UP);
         rightExpected.add(Direction.DOWN);
 
-        Set<Direction> upActual = new HashSet<>(Direction.UP.listAhead());
-        Set<Direction> downActual = new HashSet<>(Direction.DOWN.listAhead());
-        Set<Direction> leftActual = new HashSet<>(Direction.LEFT.listAhead());
-        Set<Direction> rightActual = new HashSet<>(Direction.RIGHT.listAhead());
+        Set<Direction> upActual = new HashSet<>(Direction.UP.listArc());
+        Set<Direction> downActual = new HashSet<>(Direction.DOWN.listArc());
+        Set<Direction> leftActual = new HashSet<>(Direction.LEFT.listArc());
+        Set<Direction> rightActual = new HashSet<>(Direction.RIGHT.listArc());
 
         assertEquals(upExpected, upActual);
         assertEquals(downExpected, downActual);
@@ -170,6 +172,50 @@ public class TestDirection {
         upRightExpected.add(Direction.RIGHT);
         upRightExpected.add(Direction.UP_LEFT);
         upRightExpected.add(Direction.DOWN_RIGHT);
+
+        Set<Direction> upRightActual = new HashSet<>(Direction.UP_RIGHT.listArc());
+
+        assertEquals(upRightExpected, upRightActual);
+    }
+
+    @Test
+    public void testListAhead() {
+        // cardinal directions
+        Set<Direction> upExpected = new HashSet<>();
+        upExpected.add(Direction.UP);
+        upExpected.add(Direction.UP_LEFT);
+        upExpected.add(Direction.UP_RIGHT);
+
+        Set<Direction> downExpected = new HashSet<>();
+        downExpected.add(Direction.DOWN);
+        downExpected.add(Direction.DOWN_LEFT);
+        downExpected.add(Direction.DOWN_RIGHT);
+
+        Set<Direction> leftExpected = new HashSet<>();
+        leftExpected.add(Direction.LEFT);
+        leftExpected.add(Direction.UP_LEFT);
+        leftExpected.add(Direction.DOWN_LEFT);
+
+        Set<Direction> rightExpected = new HashSet<>();
+        rightExpected.add(Direction.RIGHT);
+        rightExpected.add(Direction.UP_RIGHT);
+        rightExpected.add(Direction.DOWN_RIGHT);
+
+        Set<Direction> upActual = new HashSet<>(Direction.UP.listAhead());
+        Set<Direction> downActual = new HashSet<>(Direction.DOWN.listAhead());
+        Set<Direction> leftActual = new HashSet<>(Direction.LEFT.listAhead());
+        Set<Direction> rightActual = new HashSet<>(Direction.RIGHT.listAhead());
+
+        assertEquals(upExpected, upActual);
+        assertEquals(downExpected, downActual);
+        assertEquals(leftExpected, leftActual);
+        assertEquals(rightExpected, rightActual);
+
+        // ordinal directions
+        Set<Direction> upRightExpected = new HashSet<>();
+        upRightExpected.add(Direction.UP_RIGHT);
+        upRightExpected.add(Direction.UP);
+        upRightExpected.add(Direction.RIGHT);
 
         Set<Direction> upRightActual = new HashSet<>(Direction.UP_RIGHT.listAhead());
 

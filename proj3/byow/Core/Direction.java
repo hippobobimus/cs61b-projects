@@ -1,5 +1,6 @@
 package byow.Core;
 
+import java.util.ArrayList;
 import java.util.function.Predicate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -141,9 +142,9 @@ public enum Direction {
      * backward direction from the current direction. Specifically, it excludes
      * the opposite direction and the two directions found by rotating clockwise
      * and anticlockwise from the opposite direction.
-     * @return list of directions 'ahead'
+     * @return forward arc of directions
      */
-    public List<Direction> listAhead() {
+    public List<Direction> listArc() {
         Direction opp = this.opposite();
         Direction opp_acw = opp.rotateAnticlockwise();
         Direction opp_cw = opp.rotateClockwise();
@@ -155,6 +156,25 @@ public enum Direction {
         List<Direction> result = stream()
                                     .filter(exclude)
                                     .collect(Collectors.toList());
+        return result;
+    }
+
+    /**
+     * Returns a list of directions immediately 'ahead'. Specifically, the
+     * current direction and the two directions found by rotating clockwise and
+     * anticlockwise.
+     * @return list of directions 'ahead'
+     */
+    public List<Direction> listAhead() {
+        Direction acw = this.rotateAnticlockwise();
+        Direction cw = this.rotateClockwise();
+
+        List<Direction> result = new ArrayList<>();
+
+        result.add(this);
+        result.add(acw);
+        result.add(cw);
+
         return result;
     }
 

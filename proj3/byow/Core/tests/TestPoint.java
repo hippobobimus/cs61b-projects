@@ -1,5 +1,6 @@
-package byow.Core;
+package byow.Core.tests;
 
+import byow.Core.*;
 import byow.TileEngine.Tileset;
 
 import org.junit.Test;
@@ -47,9 +48,9 @@ public class TestPoint {
         p.setPriority(74773);
         assertEquals(74773, p.getPriority());
 
-        assertEquals(false, p.visited());
-        p.visit();
-        assertEquals(true, p.visited());
+        assertEquals(false, p.isOpen());
+        p.open();
+        assertEquals(true, p.isOpen());
     }
 
     public static void main(String[] args) {

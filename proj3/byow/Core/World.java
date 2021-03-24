@@ -1,27 +1,27 @@
 package byow.Core;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
-
+import static byow.Core.Constants.*;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 
 import java.util.Random;
 import java.util.List;
-import java.util.Map;
+//import java.util.Map;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.PriorityQueue;
-import java.util.AbstractMap;
-import java.lang.IllegalArgumentException;
+//import java.util.HashMap;
+//import java.util.PriorityQueue;
+//import java.util.AbstractMap;
 
-import static byow.Core.Constants.*;
 
-public class World {
-    private static final long SEED = 2873123;
-    private static final Random RANDOM = new Random(SEED);
+public class World extends Grid {
+    //private static final long SEED = 2873123;
+    //private static final Random RANDOM = new Random(SEED);
+    private Random random;
+    private boolean animate;
+    private TERenderer ter;
     private TETile[][] tiles;
+    private UnionFind<Point> regions;
 
 //    private Map<Point, List<Point>> adjVertices;
 //    private Point[][] grid;
@@ -29,245 +29,278 @@ public class World {
     private int totalRooms;
     private int totalFloor;
 
-    World() {
-        tiles = new TETile[WIDTH][HEIGHT];
-//        adjVertices = new HashMap<Point, List<Point>>();
-//        grid = new Point[WIDTH][HEIGHT];
-        fillWithEmptyTiles();
-    }
+    /* CONSTRUCTORS ----------------------------------------------------------*/
 
-    private PriorityQueue<DirectedPoint> fringe;
-    private Grid mazeGrid;
-    //private Map<Point, Point> edgeTo;
-    private int count = 0;
+    public World(int width, int height, long seed, String animate) {
+        super(width, height);
 
-    /** Builds a maze starting from the point at the given coords. */
-    private void buildMaze(int x, int y) {
-        mazeGrid = new Grid(WIDTH, HEIGHT);
-        fringe = new PriorityQueue<DirectedPoint>((a, b)->b.getPriority()-a.getPriority());
-        //edgeTo = new HashMap<Point, Point>();
+        this.random = new Random(seed);
 
-        DirectedPoint start = mazeGrid.get(1, 1);
-        start.setPriority(0);
-        fringe.add(start);
+        this.animate = animate.equals("animate") ? true : false;
 
-        buildMaze();
-    }
+        this.ter = new TERenderer();
+        ter.initialize(WIDTH, HEIGHT);
 
-    /** Recursive helper method. */
-    private void buildMaze() {
-//        count++;
-//        if (count == 1000) {
-//            return;
-//        }
-        if (fringe.isEmpty()) {
-            return;
-        }
-        DirectedPoint p = fringe.remove();
-        System.out.println("* Process: " + p);
-        processMazePoint(p);
-        System.out.println("  >>> FRINGE:\n      " + fringe + "\n");
-        buildMaze();
-    }
+        tiles = new TETile[width][height];
+        regions = new UnionFind<>();
 
-    private void processMazePoint(DirectedPoint p) {
-        int x = p.getX();
-        int y = p.getY();
-
-        // still clear?
-        if (p.getDirection() != null && !clearAhead(p)) {
-            return;
-        }
-
-
-        p.setTile(Tileset.FLOOR);
-        tiles[x][y] = p.getTile();
-        p.visit();
-
-        for (DirectedPoint s : mazeGrid.surrounding(p)) {
-            if (s.visited()) {
-                continue;
-            }
-            s.setTile(Tileset.WALL);
-            tiles[s.getX()][s.getY()] = s.getTile();
-        }
-
-        for (DirectedPoint n : mazeGrid.neighbours(p)) {
-            if (n.visited()) {
-                continue;
-            }
-            if (clearAhead(n)) {
-                int priority = RANDOM.nextInt();
-                n.setPriority(priority);
-                System.out.println("      >>> Add to fringe: " + n);
-                fringe.add(n);
-            } else {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                tiles[x][y] = Tileset.NOTHING;
+                Point p = get(x, y);
+                regions.add(p);
             }
         }
     }
 
-    private boolean clearAhead(DirectedPoint p) {
-        List<DirectedPoint> ahead = mazeGrid.pointsAhead(p);
-
-        if (ahead == null) {
-            System.out.println("  >>> clearAhead() of " + p + ": " + false);
-            return false;
-        }
-        for (Point a : ahead) {
-            //System.out.println("ahead: " + a);
-            if (a.getTile().equals(Tileset.FLOOR)) {
-                System.out.println("  >>> clearAhead() of " + p + ": " + false);
-                return false;
-            }
-        }
-        System.out.println("  >>> clearAhead() of " + p + ": " + true);
-        return true;
+    public World(int width, int height, long seed) {
+        this(width, height, seed, "");
     }
 
-//    private boolean isEmpty(int x, int y) {
-//        return false;
-//    }
-//
-//    private void makeCorridor() {
-//        TETile[1][1] = Tileset.FLOOR;
-//        Point up = null;
-//    }
+    public World(long seed, String animate) {
+        this(WIDTH, HEIGHT, seed, animate);
+    }
 
-//    private boolean canCarve(Point p) {
-//        int x = p.getX();
-//        int y = p.getY();
-//
-//        return false;
-//        
-//    }
+    public World(long seed) {
+        this(WIDTH, HEIGHT, seed, "");
+    }
 
-    private void fillWithEmptyTiles() {
+    /* BUILD -----------------------------------------------------------------*/
+
+    public void build() {
+        // Rooms
+        RoomBuilder rb = new RoomBuilder(this);
+
+        for (int i = 0; i < 40; i++) {
+//            int x = random.nextInt(WIDTH - w);
+//            int y = random.nextInt(HEIGHT - h);
+//            Point start = grid.get(x, y);
+            int result = rb.build();
+            System.out.println("  >>> " + (result != -1 ? "SUCCESS" : "FAILED"));
+        }
+
+        // maze
+        MazeBuilder mb = new MazeBuilder(this);
+
+        Point start = get(1, 1);
+        mb.build(start);
+
+        openBridges();
+
+        mb.reduceDeadEnds(5);
+        //List<Point> bridges = getBridgePoints();
+        //System.out.println(bridges);
+    }
+
+    /* BRIDGING REGIONS ------------------------------------------------------*/
+
+    private List<Point> getBridgePoints() {
+        List<Point> result = new ArrayList<>();
+
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
-                tiles[x][y] = Tileset.NOTHING;
-                Point p = new Point(x, y, Tileset.NOTHING);
-                List<Point> l = new ArrayList<>();
-            }
-        }
-    }
-
-    public TETile[][] tiles() {
-        return tiles;
-    }
-
-    /** Adds the given Element's tiles to the World's tile array with the
-      * origin at the given position. */
-    public void add(Element e, int x, int y) {
-        Point p = new Point(x, y);
-        this.add(e, p);
-    }
-
-    public void add(Element e, Point p) {
-        int x = p.getX();
-        int y = p.getY();
-        TETile[][] elemTiles = e.tiles();
-
-        for (int i = 0; i < e.getWidth(); i++) {
-            for (int j = 0; j < e.getHeight(); j++) {
-                tiles[x + i][y + j] = elemTiles[i][j];
-            }
-        }
-    }
-
-    private boolean areaIsEmpty(Point origin, int width, int height) {
-        int x = origin.getX();
-        int y = origin.getY();
-        return areaIsEmpty(x, y, width, height);
-    }
-
-    private boolean areaIsEmpty(int x, int y, int width, int height) {
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                TETile t = tiles[x + i][y + j];
-                if (!t.equals(Tileset.NOTHING)) {
-                    return false;
+                Point p = get(x, y);
+                if (isBridge(p)) {
+                    result.add(p);
                 }
             }
         }
+
+        return result;
+    }
+
+    private boolean isBridge(Point p) {
+        int count = 0;
+        List<Point> openExits = new ArrayList<>();
+        for (Point exit : exits(p)) {
+            if (isOpen(exit)) {
+                count++;
+                openExits.add(exit);
+            }
+        }
+
+        if (count != 2) {
+            return false;
+        }
+
+        if (isConnected(openExits.get(0), openExits.get(1))) {
+            return false;
+        }
+
         return true;
     }
 
-    /** Adds a Room with random size and position to the World. */
-    private void addRoom() {
-        // Random room dimensions and position.
-        int w = RANDOM.nextInt(MAX_ROOM_WIDTH - MIN_ROOM_WIDTH + 1) + MIN_ROOM_WIDTH;
-        int h = RANDOM.nextInt(MAX_ROOM_HEIGHT - MIN_ROOM_HEIGHT + 1) + MIN_ROOM_HEIGHT;
-        int x = RANDOM.nextInt(WIDTH - w);
-        int y = RANDOM.nextInt(HEIGHT - h);
-        if (areaIsEmpty(x, y, w, h)) {
-            Room r = new Room(w, h);
-            add(r, x, y);
+    private void openBridge(Point bridge) {
+        open(bridge);
+        for (Point exit : exits(bridge)) {
+            if (isOpen(exit)) {
+                connect(bridge, exit);
+            }
         }
     }
 
+    private void openBridges() {
+        List<Point> bridges = getBridgePoints();
 
-
-
-
-
-
-    /** Draws the world to screen. */
-    public void draw() {
-        TERenderer ter = new TERenderer();
-        ter.initialize(WIDTH, HEIGHT);
-        ter.renderFrame(tiles);
+        for (Point bridge : bridges) {
+            double r = random.nextDouble();
+            if (isBridge(bridge)) {
+                openBridge(bridge);
+            } else if (r < 0.1) {
+                openBridge(bridge);
+            }
+        }
     }
 
-    /** HELPER METHODS */
+    /* RANDOM ----------------------------------------------------------------*/
+
+    public Random getRandom() {
+        return random;
+    }
+
+    /* ANIMATION -------------------------------------------------------------*/
+
+    public void render() {
+        TETile[][] t = getTiles();
+        ter.renderFrame(t);
+    }
+
+    /**
+     * Renders the current tile state to screen and pauses for 10ms.
+     */
+    public void animate() {
+        if (!animate) {
+            return;
+        }
+        render();
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /* REGIONS ---------------------------------------------------------------*/
+
+    public void connect(Point p, Point q) {
+        if (p == null || q == null) {
+            return;
+        }
+        regions.connect(p, q);
+    }
+
+    public boolean isConnected(Point p, Point q) {
+        return regions.isConnected(p, q);
+    }
+
+    /* TILES ---------------------------------------------------------------*/
+
+    public TETile getTile(Point p) {
+        // TODO check contains
+        int x = p.getX();
+        int y = p.getY();
+        return tiles[x][y];
+    }
 
 
+    // TODO make private
+    public TETile[][] getTiles() {
+        return tiles;
+    }
 
-    /** END OF HELPER METHODS */
+    public void setTile(Point p, TETile tile) {
+        // TODO check contains
+        int x = p.getX();
+        int y = p.getY();
+        tiles[x][y] = tile;
+        p.setTile(tile);
+    }
+
+    public void setTile(int x, int y, TETile tile) {
+        // TODO check contains
+        Point p = get(x, y);
+        setTile(p, tile);
+    }
+
+    public void open(int x, int y) {
+        Point p = get(x, y);
+        open(p);
+    }
+
+    public void open(Point p) {
+        if (!contains(p)) {
+            throw new IllegalArgumentException();
+        }
+
+        p.open();
+        setTile(p, Tileset.FLOOR);
+        for (Point s : surrounding(p)) {
+            if (!s.isOpen()) {
+                setTile(s, Tileset.WALL);
+            }
+        }
+    }
+
+    public List<Point> openExits(Point p) {
+        List<Point> result = new ArrayList<>();
+
+        for (Point exit : exits(p)) {
+            if (isOpen(exit)) {
+                result.add(exit);
+            }
+        }
+
+        return result;
+    }
+
+    public void close(int x, int y) {
+        Point p = get(x, y);
+        close(p);
+    }
+
+    public void close(Point p) {
+        if (!contains(p)) {
+            throw new IllegalArgumentException();
+        }
+
+        p.close();
+        setTile(p, Tileset.WALL);
+    }
+
+    public void clear(int x, int y) {
+        Point p = get(x, y);
+        clear(p);
+    }
+
+    public void clear(Point p) {
+        if (!contains(p)) {
+            throw new IllegalArgumentException();
+        }
+
+        p.close();
+        setTile(p, Tileset.NOTHING);
+    }
+
+    public boolean isOpen(Point p) {
+        return p.isOpen();
+    }
+
+    public boolean isEmpty(int x, int y) {
+        Point p = get(x, y);
+        return isEmpty(p);
+    }
+
+    public boolean isEmpty(Point p) {
+        TETile t = getTile(p);
+        if (t.equals(Tileset.NOTHING)) {
+            return true;
+        }
+        return false;
+    }
 
     public static void main(String[] args) {
-        World w = new World();
-        w.run(args);
-    }
-    public void run(String[] args) {
-        //for (int i = 0; i < 1000; i++) {
-        //    addRoom();
-        //}
-        buildMaze();
-        draw();
+        World world = new World(2873123, "animate");
+        world.build();
+        world.render();
     }
 }
-
-
-//    private static final long SEED = 2873123;
-//    private static final Random RANDOM = new Random(SEED);
-//    /** Picks a RANDOM tile with a 33% change of being
-//     *  a wall, 33% chance of being a flower, and 33%
-//     *  chance of being empty space.
-//     */
-//    private static TETile randomTile() {
-//        int tileNum = RANDOM.nextInt(3);
-//        switch (tileNum) {
-//            case 0: return Tileset.WALL;
-//            case 1: return Tileset.FLOWER;
-//            case 2: return Tileset.NOTHING;
-//            default: return Tileset.NOTHING;
-//        }
-//    }
-//
-
-//    private class Point {
-//        private int x;
-//        private int y;
-//
-//        Point(int x, int y) {
-//            this.x = x;
-//            this.y = y;
-//        }
-//
-//        public int getX() {
-//            return x;
-//        }
-//        public int getY() {
-//            return y;
-//        }
-//    }

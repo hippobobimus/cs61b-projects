@@ -1,4 +1,6 @@
-package byow.Core;
+package byow.Core.tests;
+
+import byow.Core.*;
 
 import org.junit.Test;
 import static org.junit.Assert.*;

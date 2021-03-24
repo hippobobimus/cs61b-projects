@@ -1,119 +1,92 @@
 package byow.Core;
 
 import static byow.Core.Constants.*;
-import byow.TileEngine.TETile;
-import byow.TileEngine.Tileset;
 
-import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Represents a 2D grid of points, incorporating methods for the retrieval of
+ * specific points and their neighbours.
+ * @author Rob Masters
+ */
 public class Grid {
     private int width, height;
-    private Point[][] grid;
-    private TETile[][] tiles;
+    private Point[][] points;
+    private List<Point> pointsList;
 
-    // TODO 
-    //WeightedQuickUF<HashSet
-    //private Map<Point, Edge> edgeTo;
+    /* CONSTRUCTORS ----------------------------------------------------------*/
 
-    Grid(int width, int height) {
+    /** Full constructor for a 2D grid of points.
+     * @param width width of grid
+     * @param height height of grid
+     */
+    public Grid(int width, int height) {
         this.width = width;
         this.height = height;
-        grid = new Point[width][height];
-        tiles = new TETile[width][height];
+
+        points = new Point[width][height];
+        pointsList = new ArrayList<Point>();
+
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                grid[x][y] = new Point(x, y);
-                tiles[x][y] = Tileset.NOTHING;
+                Point p = new Point(x, y);
+                points[x][y] = p;
+                pointsList.add(p);
             }
         }
-        //edgeTo = new HashMap<>();
     }
 
-    Grid() {
+    /**
+     * Constructor without width or height. Defaults to values set in the
+     * Constants module.
+     */
+    public Grid() {
         this(WIDTH, HEIGHT);
     }
 
-    public TETile getTile(Point p) {
-        // TODO check contains
-        int x = p.getX();
-        int y = p.getY();
-        return tiles[x][y];
+    /* PUBLIC METHODS --------------------------------------------------------*/
+
+    /**
+     * Returns a list of all points in the grid.
+     * @return list of all points
+     */
+    public List<Point> allPoints() {
+        return pointsList;
     }
 
-    public void setTile(Point p, TETile tile) {
-        // TODO check contains
-        int x = p.getX();
-        int y = p.getY();
-        tiles[x][y] = tile;
-        p.setTile(tile);
-    }
-
-    public void setTile(int x, int y, TETile tile) {
-        // TODO check contains
-        Point p = get(x, y);
-        setTile(p, tile);
-    }
-
-    public void open(int x, int y) {
-        Point p = get(x, y);
-        open(p);
-    }
-
-    public void open(Point p) {
-        if (!contains(p)) {
-            throw new IllegalArgumentException();
-        }
-
-        p.open();
-    }
-
-    public TETile[][] getTiles() {
-        return tiles;
-    }
-
-    /** Returns the Point at the given grid coordinates. */
+    /**
+     * Returns the Point at the given grid coordinates. Throws an exception
+     * if the given coords are outside of the grid boundaries.
+     * @param x x-coord
+     * @param y y-coord
+     * @return point
+     */
     public Point get(int x, int y) {
         Point result;
+
         try {
-            result = grid[x][y];
+            result = points[x][y];
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new IllegalArgumentException(
                     "get(): The given grid coordinates are outside the bounds " +
                     "of the Grid.");
         }
-        return grid[x][y];
-    }
 
-//    /** Checks whether the given Point is within the boundaries of the Grid. */
-//    private boolean validPoint(Point p) {
-//        int x = p.getX();
-//        int y = p.getY();
-//        if (x >= width || x < 0) {
-//            return false;
-//        }
-//        if (y >= height || y < 0) {
-//            return false;
-//        }
-//        return true;
-//    }
+        return result;
+    }
 
     /**
      * Determines whether the given point is contained within the grid.
      * @param p point
+     * @return whether point is in the grid
      */
     public boolean contains(Point p) {
         int x = p.getX();
         int y = p.getY();
 
         // Within coordinate bounds of grid?
-        if (x < 0 || x >= width) {
-            return false;
-        }
-        if (y < 0 || y >= height)  {
+        if (!contains(x, y)) {
             return false;
         }
 
@@ -126,247 +99,104 @@ public class Grid {
         return true;
     }
 
-    /** Returns a List of Points surrounding the given Point in the given
-      * directions. */
+    /**
+     * Determines whether the given x,y-coordinates are contained within the
+     * grid.
+     * @param x x-coord
+     * @param y y-coord
+     * @return whether coords are in the grid
+     */
+    public boolean contains(int x, int y) {
+        if (x < 0 || x >= width) {
+            return false;
+        }
+        if (y < 0 || y >= height)  {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns the (up to 4) Points directly above, below and to the left and right of the
+     * given Point. Only returns points contained within the grid boundaries.
+     * @param p point
+     * @return exit points
+     */
+    public List<Point> exits(Point p) {
+        List<Direction> dirs = Direction.listCardinal();
+        return neighbours(p, dirs);
+    }
+
+    /**
+     * Returns the (up to 8) Points directly surrounding a given Point. Only
+     * returns points contained within the grid boundaries.
+     * @param p point
+     * @return surrounding points
+     */
+    public List<Point> surrounding(Point p) {
+        List<Direction> dirs = Direction.listAll();
+        return neighbours(p, dirs);
+    }
+
+    /**
+     * Returns the (up to 5) points directly ahead and to the sides of the given
+     * point relative to the given direction. Only returns points contained
+     * within the grid boundaries.
+     * @param p point
+     * @param d direction
+     * @return arc of points
+     */
+    public List<Point> arc(Point p, Direction d) {
+        List<Direction> dirs = d.listArc();
+        return neighbours(p, dirs);
+    }
+
+    /**
+     * Returns the (up to 3) points directly ahead of the given point relative
+     * to the Direction of travel. Only returns points contained within the grid
+     * boundaries.
+     * @param p point
+     * @param d direction of travel
+     * @return points ahead
+     */
+    public List<Point> ahead(Point p, Direction d) {
+        List<Direction> dirs = d.listAhead();
+        return neighbours(p, dirs);
+    }
+
+    /* PRIVATE HELPER METHODS ------------------------------------------------*/
+
+    /**
+     * Throws an exception if the point is not contained in the grid.
+     * @param p point
+     */
+    private void validatePoint(Point p) {
+        if (contains(p)) {
+            throw new IllegalArgumentException(
+                    "Point not contained in grid: " + p);
+        }
+    }
+
+    /**
+     * Returns a List of Points surrounding the given Point in the given
+     * directions.
+     * @param p point
+     * @param dirs directions
+     * @return points list
+     */
     private List<Point> neighbours(Point p, List<Direction> dirs) {
         List<Point> result = new ArrayList<>();
+        int x = p.getX();
+        int y = p.getY();
 
         for (Direction dir : dirs) {
-            int neighbourX = dir.transformX(p.getX());
-            int neighbourY = dir.transformY(p.getY());
-            Point neighbour;
-            //Point neighbour = dir.moveFrom(p);
-            //TODO Refactor
-            // TODO handle invalid arg exception
-            try {
-                neighbour = get(neighbourX, neighbourY);
-            } catch (IllegalArgumentException e) {
-                continue;
+            int nx = dir.transformX(x);
+            int ny = dir.transformY(y);
+            if (contains(nx, ny)) {
+                Point neighbour = get(nx, ny);
+                result.add(neighbour);
             }
-            result.add(neighbour);
-            //if (validPoint(neighbour)) {
-            //    result.add(neighbour);
-            //}
         }
         return result;
     }
-
-    /** Returns 4 Points directly above, below and to the left and right of the
-      * given Point, if they are within the Grid boundary. */
-    public List<Point> exits(Point p) {
-        List<Direction> dirs = Direction.listCardinal();
-//        Direction[] dirs = new Direction[] {
-//            Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT
-//        };
-        return neighbours(p, dirs);
-    }
-
-    /** Returns the 8 Points directly surrounding a given Point, if they are 
-     * within the Grid boundary. */
-    public List<Point> surrounding(Point p) {
-        List<Direction> dirs = Direction.listAll();
-        //Direction[] dirs = new Direction[] {
-       //     Direction.UP_LEFT, Direction.UP, Direction.UP_RIGHT,
-       //     Direction.LEFT, Direction.RIGHT,
-       //     Direction.DOWN_LEFT, Direction.DOWN, Direction.DOWN_RIGHT
-       // };
-        return neighbours(p, dirs);
-    }
-
-    /** Returns the 5 Points directly ahead and to the sides of the given Point
-      * relative to the Direction of travel, if they are within the Grid
-      * boundary. */
-    public List<Point> ahead(Point p, Direction d) {
-        List<Direction> dirs = d.listAhead();
-//        int dx = d.getX();
-//        int dy = d.getY();
-//        List<Direction> dirs = new ArrayList<>();
-//        for (Direction dir : Direction.values()) {
-//            if (dx != 0 && dir.getX() == -dx) {
-//                continue;
-//            }
-//            if (dy != 0 && dir.getY() == -dy) {
-//                continue;
-//            }
-//            dirs.add(dir);
-//        }
-        //switch(d) {
-        //    case UP:
-        //        dirs = new Direction[] {
-        //            Direction.UP_LEFT, Direction.UP, Direction.UP_RIGHT,
-        //            Direction.LEFT, Direction.RIGHT
-        //        };
-        //        break;
-        //    case DOWN:
-        //        dirs = new Direction[] {
-        //            Direction.DOWN_LEFT, Direction.DOWN, Direction.DOWN_RIGHT,
-        //            Direction.LEFT, Direction.RIGHT
-        //        };
-        //        break;
-        //    case LEFT:
-        //        dirs = new Direction[] {
-        //            Direction.UP_LEFT, Direction.LEFT, Direction.DOWN_LEFT,
-        //            Direction.UP, Direction.DOWN
-        //        };
-        //        break;
-        //    case RIGHT:
-        //        dirs = new Direction[] {
-        //            Direction.UP_RIGHT, Direction.RIGHT, Direction.DOWN_RIGHT,
-        //            Direction.UP, Direction.DOWN
-        //        };
-        //        break;
-        //    default:
-        //        throw new IllegalArgumentException(
-        //                "ahead(): The given direction must be UP, DOWN, LEFT " +
-        //                "or RIGHT. Given '" + d + "'.");
-        //}
-        return neighbours(p, dirs);
-    }
-
-//    /** Returns true if the 5 Points ahead of the given point fall within the
-//     * Grid boundary and are not already navigable. */
-//    private boolean canExtendPath(Point p, Direction d) {
-//        List<Point> pointsAhead = ahead(p, d);
-//        // Any Points outside Grid?
-//        if (pointsAhead.size() < 5) {
-//            return false;
-//        }
-//        for (Point a : pointsAhead) {
-//            if (a.navigable()) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-
-
-/***************************************/
-
-
-//    public List<DirectedPoint> surrounding(DirectedPoint p) {
-//        int x = p.getX();
-//        int y = p.getY();
-//
-//        ArrayList<DirectedPoint> l = new ArrayList<>();
-//
-//        for (int i = -1; i < 2; i++) {
-//            for (int j = -1; j < 2; j++) {
-//                if (i == 0 && j == 0) {
-//                    continue;
-//                }
-//                DirectedPoint s = grid[x + i][y + j];
-//                l.add(s);
-//            }
-//        }
-//
-//        return l;
-//    }
-//
-//    public List<DirectedPoint> neighbours(DirectedPoint p) {
-//        int x = p.getX();
-//        int y = p.getY();
-//
-//        ArrayList<DirectedPoint> l = new ArrayList<>();
-//
-//        if (y < HEIGHT - 1) {
-//            DirectedPoint up = grid[x][y + 1];
-//            up.setDirection(Direction.UP);
-//            l.add(up);
-//        }
-//        if (y > 0) {
-//            DirectedPoint down = grid[x][y - 1];
-//            //System.out.println(down);
-//            down.setDirection(Direction.DOWN);
-//            l.add(down);
-//        }
-//        if (x > 0) {
-//            DirectedPoint left = grid[x - 1][y];
-//            left.setDirection(Direction.LEFT);
-//            l.add(left);
-//        }
-//        if (x < WIDTH - 1) {
-//            DirectedPoint right = grid[x + 1][y];
-//            right.setDirection(Direction.RIGHT);
-//            l.add(right);
-//        }
-//
-//        return l;
-//    }
-//
-//    public List<DirectedPoint> pointsAhead(DirectedPoint p) {
-//        int x = p.getX();
-//        int y = p.getY();
-//        Direction d = p.getDirection();
-//
-//        ArrayList<DirectedPoint> l = new ArrayList<>();
-//
-//        DirectedPoint a1, a2, a3, a4, a5;
-//
-//        switch(d) {
-//            case UP:
-//                if (y == HEIGHT - 1) {
-//                    return null;
-//                }
-//                // in front
-//                a1 = grid[x - 1][y + 1];
-//                a2 = grid[x][y + 1];
-//                a3 = grid[x + 1][y + 1];
-//                // sides
-//                a4 = grid[x - 1][y];
-//                a5 = grid[x + 1][y];
-//                l.add(a1);
-//                l.add(a2);
-//                l.add(a3);
-//                l.add(a4);
-//                l.add(a5);
-//                break;
-//            case DOWN:
-//                if (y == 0) {
-//                    return null;
-//                }
-//                a1 = grid[x - 1][y - 1];
-//                a2 = grid[x][y - 1];
-//                a3 = grid[x + 1][y - 1];
-//                a4 = grid[x - 1][y];
-//                a5 = grid[x + 1][y];
-//                l.add(a1);
-//                l.add(a2);
-//                l.add(a3);
-//                l.add(a4);
-//                l.add(a5);
-//                break;
-//            case LEFT:
-//                if (x == 0) {
-//                    return null;
-//                }
-//                a1 = grid[x - 1][y + 1];
-//                a2 = grid[x - 1][y];
-//                a3 = grid[x - 1][y - 1];
-//                a4 = grid[x][y - 1];
-//                a5 = grid[x][y + 1];
-//                l.add(a1);
-//                l.add(a2);
-//                l.add(a3);
-//                l.add(a4);
-//                l.add(a5);
-//                break;
-//            case RIGHT:
-//                if (x == WIDTH - 1) {
-//                    return null;
-//                }
-//                a1 = grid[x + 1][y + 1];
-//                a2 = grid[x + 1][y];
-//                a3 = grid[x + 1][y - 1];
-//                a4 = grid[x][y - 1];
-//                a5 = grid[x][y + 1];
-//                l.add(a1);
-//                l.add(a2);
-//                l.add(a3);
-//                l.add(a4);
-//                l.add(a5);
-//                break;
-//        }
-//
-//        return l;
-//    }
 }

@@ -1,9 +1,8 @@
 package byow.Core;
 
 import static byow.Core.Constants.*;
-import byow.TileEngine.TERenderer;
-import byow.TileEngine.Tileset;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -13,16 +12,14 @@ import java.util.Random;
 
 /**
  * Uses a randomised Prim's algorithm to pseudo-randomly generate a connected
- * maze that fills the available grid area.
+ * maze that fills the available world area.
  * @author Rob Masters
  */
-public class MazeBuilder {
-    private Grid grid;
+public class MazeBuilder implements Builder {
+    private World world;
     private Random random;
     private int iterations;
     private int maxIterations;
-    private boolean animate = false;
-    private TERenderer ter;
     private Map<Point, Edge> edgeTo;
     private PriorityQueue<Point> fringe;
     private Point start;
@@ -30,26 +27,16 @@ public class MazeBuilder {
     /* CONSTRUCTORS ----------------------------------------------------------*/
 
     /**
-     * Full constructor. Creeates an object with associated build methods for
-     * creating mazes in 2D tilespace. If "animate" is specified a TERenderer
-     * must also be provided.
-     * @param grid grid
-     * @param random pseudo-random number generator
+     * Full constructor. Creates an object with associated build methods for
+     * creating mazes in 2D tilespace.
+     * @param world world
      * @param maxIterations max iterations when building a maze
-     * @param animate animate?
-     * @param ter renderer
      */
-    public MazeBuilder(Grid grid, Random random, int maxIterations, String animate, TERenderer ter) {
-        this.grid = grid;
-        this.random = random;
+    public MazeBuilder(World world, int maxIterations) {
+        this.world = world;
         this.maxIterations = maxIterations;
-        this.animate = animate.equals("animate") ? true : false;
-        this.ter = ter;
 
-        if (this.animate && ter == null) {
-            throw new IllegalArgumentException("When animating, a TERenderer" +
-                    "must be provided.");
-        }
+        this.random = world.getRandom();
 
         // Compare Points in PQ by their priority field.
         Comparator<Point> cmp = (a, b) -> b.getPriority() - a.getPriority();
@@ -58,36 +45,11 @@ public class MazeBuilder {
     }
 
     /**
-     * Constructor without specifying animation/renderer.
-     * Defaults to no animation.
-     * @param grid grid
-     * @param random pseudo-random number generator
-     * @param maxIterations max iterations when building a maze
+     * Constructor without max iterations. Defaults to no iteration limit.
+     * @param world world
      */
-    public MazeBuilder(Grid grid, Random random, int maxIterations) {
-        this(grid, random, maxIterations, "", null);
-    }
-
-    /**
-     * Constructor without max iterations.
-     * Defaults to no iteration limit.
-     * @param grid grid
-     * @param random pseudo-random number generator
-     * @param animate animate?
-     * @param ter renderer
-     */
-    public MazeBuilder(Grid grid, Random random, String animate, TERenderer ter) {
-        this(grid, random, -1, animate, ter);
-    }
-
-    /**
-     * Constructor without max iterations, or specifying animation/renderer.
-     * Defaults to no iteration limit and no animation.
-     * @param grid grid
-     * @param random pseudo-random number generator
-     */
-    public MazeBuilder(Grid grid, Random random) {
-        this(grid, random, -1, "", null);
+    public MazeBuilder(World world) {
+        this(world, -1);
     }
 
     /* PUBLIC METHODS --------------------------------------------------------*/
@@ -97,7 +59,8 @@ public class MazeBuilder {
      * returns 0 upon successful completion.
      * @param start start point
      */
-    public int buildMaze(Point start) {
+    @Override
+    public int build(Point start) {
         reset();
 
         this.start = start;
@@ -110,6 +73,89 @@ public class MazeBuilder {
         buildMaze();
 
         return 0;
+    }
+
+    /**
+     */
+    public void reduceDeadEnds(int iterations) {
+        //findDeadEnds();
+        for (int i = 0; i < iterations; i++) {
+            reduceDeadEnds();
+        }
+    }
+
+    /**
+     */
+    private void reduceDeadEnds() {
+        List<Point> deadEnds = findDeadEnds();
+
+        for (Point deadEnd : deadEnds) {
+            retractDeadEnd(deadEnd);
+        }
+    }
+
+    /**
+     */
+    private void retractDeadEnd(Point p) {
+        p.close();
+
+        Edge e = edgeTo.get(p);
+        if (e == null) {
+            return;
+        }
+        Direction dir = e.direction();
+
+        List<Point> ahead = world.ahead(p, dir);
+
+        for (Point a : ahead) {
+            if (world.isOpen(a)) {
+                return;
+            }
+        }
+
+        for (Point a : ahead) {
+            world.clear(a);
+        }
+
+        world.animate();
+    }
+
+    /**
+     * Returns a list of all dead ends in the world.
+     * @return dead ends list
+     */
+    private List<Point> findDeadEnds() {
+        List<Point> result = new ArrayList<>();
+
+        for (Point p : world.allPoints()) {
+            if (isDeadEnd(p)) {
+                System.out.println(p);
+                result.add(p);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Determines whether the given point is a dead end. Dead ends have only
+     * one open exit.
+     * @param p point
+     * @return dead-end?
+     */
+    private boolean isDeadEnd(Point p) {
+        if (!world.isOpen(p)) {
+            return false;
+        }
+
+        List<Point> openExits = world.openExits(p);
+        System.out.println("Open exits: " + openExits);
+
+        if (openExits.size() == 1) {
+            return true;
+        }
+
+        return false;
     }
 
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
@@ -137,26 +183,25 @@ public class MazeBuilder {
      * @param p point
      */
     private void process(Point p) {
-        // Cease processing if the route ahead is not clear and remove the edge
-        // to this point.
+        // Cease processing if the route is not clear and remove the edge to
+        // this point.
         if (!canProcess(p)) {
             edgeTo.remove(p);
             return;
         }
 
-        // open point and assign floor tile, surrounded by wall.
-        p.open();
+        // open point, which assigns floor tile, surrounded by wall.
+        world.open(p);
 
-        grid.setTile(p, Tileset.FLOOR);
-
-        for (Point s : grid.surrounding(p)) {
-            if (!s.isOpen()) {
-                grid.setTile(s, Tileset.WALL);
-            }
+        // connect to previous point
+        Edge e = edgeTo.get(p);
+        if (e != null) {  // start will not have an edge
+            Point from = e.from();
+            world.connect(from, p);
         }
 
         // add unopen exits to the fringe and corresponding edges to edgeTo.
-        for (Point exit : grid.exits(p)) {
+        for (Point exit : world.exits(p)) {
             if (exit.isOpen()) {
                 continue;
             }
@@ -168,14 +213,14 @@ public class MazeBuilder {
 
             fringe.add(exit);
         }
-        animateStep();
+        world.animate();
     }
 
     /**
      * Determines whether the given point can be processed. To be processed
      * it must not lie in a corner or at an edge, or have any open points
-     * ahead of it. The start is an automatic pass as it has already been
-     * checked.
+     * in the arc ahead of it. The start is an automatic pass as it has already
+     * been checked.
      * @param p point
      */
     private boolean canProcess(Point p) {
@@ -193,16 +238,16 @@ public class MazeBuilder {
 
         Direction dir = e.direction();
 
-        List<Point> ahead = grid.ahead(p, dir);
+        List<Point> arc = world.arc(p, dir);
 
         // reached an edge or corner.
-        if (ahead == null || ahead.size() < 5) {
+        if (arc == null || arc.size() < 5) {
             return false;
         }
 
-        // make sure the points ahead are unopened.
-        for (Point a : ahead) {
-            if (a.isOpen()) {
+        // make sure the points in the arc ahead are unopened.
+        for (Point a : arc) {
+            if (world.isOpen(a)) {
                 return false;
             }
         }
@@ -237,42 +282,28 @@ public class MazeBuilder {
      * @param start start point for maze
      */
     private boolean validStart(Point start) {
-        if (!grid.contains(start)) {
+        if (!world.contains(start)) {
             return false;
         }
 
-        if (start.getTile().equals(Tileset.FLOOR)) {
+        if (world.isOpen(start)) {
             return false;
         }
 
-        List<Point> surroundingPoints = grid.surrounding(start);
+        List<Point> surroundingPoints = world.surrounding(start);
 
+        // check for edge / corner position.
         if (surroundingPoints.size() < 8) {
             return false;
         }
 
         for (Point p : surroundingPoints) {
-            if (p.isOpen()) {
+            if (world.isOpen(p)) {
                 return false;
             }
         }
 
         return true;
-    }
-
-    /**
-     * Updates the current tile state to screen and pauses for 10ms.
-     */
-    private void animateStep() {
-        if (!animate) {
-            return;
-        }
-        ter.renderFrame(grid.getTiles());
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     /* MAIN METHOD -----------------------------------------------------------*/
@@ -281,18 +312,13 @@ public class MazeBuilder {
      * Draws a maze to screen starting at (1,1).
      */
     public static void main(String[] args) {
-        TERenderer ter = new TERenderer();
-        ter.initialize(WIDTH, HEIGHT);
+        World world = new World(2873123, "animate");
 
-        Grid g = new Grid();
+        MazeBuilder mb = new MazeBuilder(world);
 
-        Random rand = new Random(2873123);
+        Point start = world.get(1, 1);
+        mb.build(start);
 
-        MazeBuilder mb = new MazeBuilder(g, rand, "animate", ter);
-
-        Point start = g.get(1, 1);
-        mb.buildMaze(start);
-
-        ter.renderFrame(g.getTiles());
+        world.render();
     }
 }
