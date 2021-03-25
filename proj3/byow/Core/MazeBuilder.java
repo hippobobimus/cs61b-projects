@@ -76,86 +76,17 @@ public class MazeBuilder implements Builder {
     }
 
     /**
+     * Retracts all dead ends in the world by up to the given number of steps
+     * where possible (less if the dead end cannot be retracted further). The
+     * greater the steps, the more sparse the maze becomes.
+     * @param steps retraction steps
      */
-    public void reduceDeadEnds(int iterations) {
-        //findDeadEnds();
-        for (int i = 0; i < iterations; i++) {
-            reduceDeadEnds();
+    public void reduceDeadEnds(int steps) {
+        List<Point> deadEnds = world.allDeadEnds();
+
+        for (int i = 0; i < steps; i++) {
+            deadEnds = reduceDeadEnds(deadEnds);
         }
-    }
-
-    /**
-     */
-    private void reduceDeadEnds() {
-        List<Point> deadEnds = findDeadEnds();
-
-        for (Point deadEnd : deadEnds) {
-            retractDeadEnd(deadEnd);
-        }
-    }
-
-    /**
-     */
-    private void retractDeadEnd(Point p) {
-        p.close();
-
-        Edge e = edgeTo.get(p);
-        if (e == null) {
-            return;
-        }
-        Direction dir = e.direction();
-
-        List<Point> ahead = world.ahead(p, dir);
-
-        for (Point a : ahead) {
-            if (world.isOpen(a)) {
-                return;
-            }
-        }
-
-        for (Point a : ahead) {
-            world.clear(a);
-        }
-
-        world.animate();
-    }
-
-    /**
-     * Returns a list of all dead ends in the world.
-     * @return dead ends list
-     */
-    private List<Point> findDeadEnds() {
-        List<Point> result = new ArrayList<>();
-
-        for (Point p : world.allPoints()) {
-            if (isDeadEnd(p)) {
-                System.out.println(p);
-                result.add(p);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * Determines whether the given point is a dead end. Dead ends have only
-     * one open exit.
-     * @param p point
-     * @return dead-end?
-     */
-    private boolean isDeadEnd(Point p) {
-        if (!world.isOpen(p)) {
-            return false;
-        }
-
-        List<Point> openExits = world.openExits(p);
-        System.out.println("Open exits: " + openExits);
-
-        if (openExits.size() == 1) {
-            return true;
-        }
-
-        return false;
     }
 
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
@@ -304,6 +235,58 @@ public class MazeBuilder implements Builder {
         }
 
         return true;
+    }
+
+    /**
+     * Retracts each one of the given dead ends by a single step, returning an
+     * updated list of dead ends.
+     * @param deadEnds list of dead ends
+     * @return updated list of dead ends
+     */
+    private List<Point> reduceDeadEnds(List<Point> deadEnds) {
+        List<Point> newDeadEnds = new ArrayList<>();;
+
+        for (Point deadEnd : deadEnds) {
+            Point newDE = edgeTo.get(deadEnd).from();
+            retractDeadEnd(deadEnd);
+            if (world.isDeadEnd(newDE)) {
+                newDeadEnds.add(newDE);
+            }
+        }
+
+        return newDeadEnds;
+    }
+
+    /**
+     * Closes the given point, removes the edge to it and, if possible, clears
+     * the points that were ahead of it.
+     * @param p point
+     */
+    private void retractDeadEnd(Point p) {
+        world.close(p);
+
+        Edge e = edgeTo.get(p);
+
+        // ignore start position.
+        if (e == null) {  
+            return;
+        }
+
+        Direction dir = e.direction();
+
+        List<Point> ahead = world.ahead(p, dir);
+
+        // clear points ahead if possible.
+        for (Point a : ahead) {
+            if (world.canClear(a)) {
+                world.clear(a);
+            }
+        }
+
+        // remove edge to point.
+        edgeTo.remove(p);
+
+        world.animate();
     }
 
     /* MAIN METHOD -----------------------------------------------------------*/

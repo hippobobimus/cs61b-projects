@@ -15,16 +15,11 @@ import java.util.ArrayList;
 
 
 public class World extends Grid {
-    //private static final long SEED = 2873123;
-    //private static final Random RANDOM = new Random(SEED);
     private Random random;
     private boolean animate;
     private TERenderer ter;
     private TETile[][] tiles;
     private UnionFind<Point> regions;
-
-//    private Map<Point, List<Point>> adjVertices;
-//    private Point[][] grid;
 
     private int totalRooms;
     private int totalFloor;
@@ -87,7 +82,7 @@ public class World extends Grid {
 
         openBridges();
 
-        mb.reduceDeadEnds(5);
+        mb.reduceDeadEnds(10);
         //List<Point> bridges = getBridgePoints();
         //System.out.println(bridges);
     }
@@ -297,6 +292,61 @@ public class World extends Grid {
         }
         return false;
     }
+
+    /**
+     * Returns a list of all dead ends in the world.
+     * @return dead ends list
+     */
+    public List<Point> allDeadEnds() {
+        List<Point> result = new ArrayList<>();
+
+        for (Point p : allPoints()) {
+            if (isDeadEnd(p)) {
+                result.add(p);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Determines whether the given point is a dead end. Dead ends have only
+     * one open exit.
+     * @param p point
+     * @return dead-end?
+     */
+    public boolean isDeadEnd(Point p) {
+        if (!isOpen(p)) {
+            return false;
+        }
+
+        List<Point> openExits = openExits(p);
+
+        if (openExits.size() == 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * A point can be cleared if it is not open and not surrounded by any open
+     * points.
+     * @param p point
+     * @return can be cleared
+     */
+    public boolean canClear(Point p) {
+        if (isOpen(p)) {
+            return false;
+        }
+        for (Point neighbour : surrounding(p)) {
+            if (isOpen(neighbour)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     public static void main(String[] args) {
         World world = new World(2873123, "animate");

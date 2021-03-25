@@ -3,6 +3,7 @@ package byow.Core;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 
+// TODO remove tile/open/navigable. should be part of world class only
 /**
  * A class that represents an individual point from a 2D tiled area.
  * @author Rob Masters
