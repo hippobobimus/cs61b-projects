@@ -208,7 +208,7 @@ public class World extends Grid {
         int x = p.getX();
         int y = p.getY();
         tiles[x][y] = tile;
-        p.setTile(tile);
+        //p.setTile(tile);
     }
 
     public void setTile(int x, int y, TETile tile) {

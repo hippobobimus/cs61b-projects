@@ -45,20 +45,20 @@ public class TestMazeBuilder {
 
     @Test
     public void testConnections() {
-        World g = new World(2873123);
-        MazeBuilder mb = new MazeBuilder(g);
+        World world = new World(2873123);
+        MazeBuilder mb = new MazeBuilder(world);
 
-        Point start = g.get(1, 1);
+        Point start = world.get(1, 1);
         Point previous = start;
 
         mb.build(start);
 
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
-                Point p = g.get(x, y);
-                if (p.getTile().equals(Tileset.FLOOR)) {
-                    assertTrue(g.isConnected(p, previous));
-                    assertTrue(g.isConnected(p, start));
+                Point p = world.get(x, y);
+                if (world.getTile(p).equals(Tileset.FLOOR)) {
+                    assertTrue(world.isConnected(p, previous));
+                    assertTrue(world.isConnected(p, start));
                     previous = p;
                 }
             }
