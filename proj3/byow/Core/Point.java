@@ -3,7 +3,6 @@ package byow.Core;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 
-// TODO remove tile/open/navigable. should be part of world class only
 /**
  * A class that represents an individual point from a 2D tiled area.
  * @author Rob Masters
@@ -11,7 +10,6 @@ import byow.TileEngine.Tileset;
 public class Point {
     private int x;
     private int y;
-    private boolean open;
     private int priority;
 
     /* CONSTRUCTOR METHODS ---------------------------------------------------*/
@@ -21,12 +19,11 @@ public class Point {
      * and an integer priority value.
      * @param x x-coordinate
      * @param y y-coordinate
-     * @param priority // TODO remove and add to builder?
+     * @param priority // TODO remove and add to world?
      */
     public Point(int x, int y, int priority) {
         this.x = x;
         this.y = y;
-        this.open = false;
         this.priority = priority;
     }
 
@@ -73,28 +70,6 @@ public class Point {
         this.priority = priority;
     }
 
-    /**
-     * Returns true if the point is open, false otherwise.
-     * @return open
-     */
-    public boolean isOpen() {
-        return open;
-    }
-
-    /**
-     * Marks the point as open.
-     */
-    public void open() {
-        open = true;
-    }
-
-    /**
-     * Marks the point as not open.
-     */
-    public void close() {
-        open = false;
-    }
-
     /* OVERRIDDEN METHODS ----------------------------------------------------*/
 
     /**
@@ -104,7 +79,7 @@ public class Point {
     @Override
     public String toString() {
         String s = "{" + getX() + ", " + getY() + ", priority=" +
-            getPriority() + ", open=" + isOpen() + "}";
+            getPriority() + "}";
         return s;
     }
 }

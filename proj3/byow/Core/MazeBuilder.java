@@ -133,7 +133,7 @@ public class MazeBuilder implements Builder {
 
         // add unopen exits to the fringe and corresponding edges to edgeTo.
         for (Point exit : world.exits(p)) {
-            if (exit.isOpen()) {
+            if (world.isOpen(exit)) {
                 continue;
             }
 

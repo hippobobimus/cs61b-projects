@@ -20,6 +20,7 @@ public class World extends Grid {
     private TERenderer ter;
     private TETile[][] tiles;
     private UnionFind<Point> regions;
+    private State[][] states;
 
     private int totalRooms;
     private int totalFloor;
@@ -38,12 +39,14 @@ public class World extends Grid {
 
         tiles = new TETile[width][height];
         regions = new UnionFind<>();
+        states = new State[width][height];
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 tiles[x][y] = Tileset.NOTHING;
                 Point p = get(x, y);
                 regions.add(p);
+                states[x][y] = State.EMPTY;
             }
         }
     }
@@ -227,10 +230,15 @@ public class World extends Grid {
             throw new IllegalArgumentException();
         }
 
-        p.open();
+        //p.open();
+        // set state to open
+        //states[p.getX()][p.getY()] = 1;
+        setState(p, State.OPEN);
+
+        // reconfigure tiles
         setTile(p, Tileset.FLOOR);
         for (Point s : surrounding(p)) {
-            if (!s.isOpen()) {
+            if (!isOpen(s)) {
                 setTile(s, Tileset.WALL);
             }
         }
@@ -258,7 +266,11 @@ public class World extends Grid {
             throw new IllegalArgumentException();
         }
 
-        p.close();
+        //p.close();
+        // set state to closed
+        //states[p.getX()][p.getY()] = -1;
+        setState(p, State.CLOSED);
+
         setTile(p, Tileset.WALL);
     }
 
@@ -272,12 +284,42 @@ public class World extends Grid {
             throw new IllegalArgumentException();
         }
 
-        p.close();
+        //p.close();
+        // set state to empty
+        setState(p, State.EMPTY);
+        //states[p.getX()][p.getY()] = 0;
+
         setTile(p, Tileset.NOTHING);
     }
 
     public boolean isOpen(Point p) {
-        return p.isOpen();
+        State s = getState(p);
+
+        boolean result = s.equals(State.OPEN) ? true : false;
+
+        return result;
+    }
+
+    private State getState(Point p) {
+        int x = p.getX();
+        int y = p.getY();
+
+        State s = states[x][y];
+
+        return s;
+    }
+
+    private void setState(Point p, State s) {
+        int x = p.getX();
+        int y = p.getY();
+
+        states[x][y] = s;
+    }
+
+    private enum State {
+        OPEN,
+        CLOSED,
+        EMPTY
     }
 
     public boolean isEmpty(int x, int y) {
@@ -286,11 +328,17 @@ public class World extends Grid {
     }
 
     public boolean isEmpty(Point p) {
-        TETile t = getTile(p);
-        if (t.equals(Tileset.NOTHING)) {
-            return true;
-        }
-        return false;
+        State s = getState(p);
+
+        boolean result = s.equals(State.EMPTY) ? true : false;
+
+        return result;
+
+        //TETile t = getTile(p);
+        //if (t.equals(Tileset.NOTHING)) {
+        //    return true;
+        //}
+        //return false;
     }
 
     /**

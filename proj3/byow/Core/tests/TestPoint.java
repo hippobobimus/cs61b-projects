@@ -40,10 +40,6 @@ public class TestPoint {
         assertEquals(18747, p.getPriority());
         p.setPriority(74773);
         assertEquals(74773, p.getPriority());
-
-        assertEquals(false, p.isOpen());
-        p.open();
-        assertEquals(true, p.isOpen());
     }
 
     public static void main(String[] args) {
