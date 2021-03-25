@@ -5,10 +5,10 @@ import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 
-import java.util.Random;
-import java.util.List;
-//import java.util.Map;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+//import java.util.Map;
 //import java.util.HashMap;
 //import java.util.PriorityQueue;
 //import java.util.AbstractMap;
@@ -18,10 +18,11 @@ public class World extends Grid {
     private Random random;
     private boolean animate;
     private TERenderer ter;
-    private TETile[][] tiles;
     private UnionFind<Point> regions;
+    private TETile[][] tiles;
     private State[][] states;
 
+    // TODO
     private int totalRooms;
     private int totalFloor;
 
@@ -95,7 +96,7 @@ public class World extends Grid {
     private List<Point> getBridgePoints() {
         List<Point> result = new ArrayList<>();
 
-        for (int x = 0; x < WIDTH; x++) {
+        for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < HEIGHT; y++) {
                 Point p = get(x, y);
                 if (isBridge(p)) {

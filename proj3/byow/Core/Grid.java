@@ -48,6 +48,22 @@ public class Grid {
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
+     * Returns the height of the grid.
+     * @return height
+     */
+    public int getHeight() {
+        return height;
+    }
+
+    /**
+     * Returns the width of the grid.
+     * @return width
+     */
+    public int getWidth() {
+        return width;
+    }
+
+    /**
      * Returns a list of all points in the grid.
      * @return list of all points
      */

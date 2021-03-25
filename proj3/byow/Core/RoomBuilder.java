@@ -31,8 +31,8 @@ public class RoomBuilder {
         // Random room dimensions and position.
         int w = random.nextInt(MAX_ROOM_WIDTH - MIN_ROOM_WIDTH + 1) + MIN_ROOM_WIDTH;
         int h = random.nextInt(MAX_ROOM_HEIGHT - MIN_ROOM_HEIGHT + 1) + MIN_ROOM_HEIGHT;
-        int x = random.nextInt(WIDTH - w);
-        int y = random.nextInt(HEIGHT - h);
+        int x = random.nextInt(world.getWidth() - w);
+        int y = random.nextInt(world.getHeight() - h);
 
         Point origin = world.get(x, y);
 
