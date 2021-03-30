@@ -82,7 +82,7 @@ public class MazeBuilder implements Builder {
      * @param steps retraction steps
      */
     public void reduceDeadEnds(int steps) {
-        List<Point> deadEnds = world.allDeadEnds();
+        List<Point> deadEnds = world.listDeadEnds();
 
         for (int i = 0; i < steps; i++) {
             deadEnds = reduceDeadEnds(deadEnds);
@@ -100,7 +100,7 @@ public class MazeBuilder implements Builder {
         while (!reachedIterationLimit() && !fringe.isEmpty()) {
             iterations++;
             Point p = fringe.remove();
-            System.out.println("* Process: " + p);
+            //System.out.println("* Process: " + p);
             process(p);
             //System.out.println("  >>> FRINGE:\n      " + fringe + "\n");
             //System.out.println("  >>> FRINGE LENGTH: " + fringe.size());

@@ -67,7 +67,7 @@ public class Grid {
      * Returns a list of all points in the grid.
      * @return list of all points
      */
-    public List<Point> allPoints() {
+    public List<Point> listAllPoints() {
         return pointsList;
     }
 

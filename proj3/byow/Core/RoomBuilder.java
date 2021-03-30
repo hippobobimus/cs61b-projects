@@ -36,8 +36,8 @@ public class RoomBuilder {
 
         Point origin = world.get(x, y);
 
-        System.out.println("Room build attempt: width=" + w + ", height=" + h + ", " +
-                origin + ".");
+//        System.out.println("Room build attempt: width=" + w + ", height=" + h + ", " +
+//                origin + ".");
 
         // check placement is viable
         if (!areaIsEmpty(origin, w, h)) {
