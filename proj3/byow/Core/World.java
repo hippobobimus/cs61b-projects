@@ -102,9 +102,9 @@ public class World extends Grid {
         // maze
         MazeBuilder mb = new MazeBuilder(this);
 
-        Point start = get(1, 1);
+        //Point start = get(1, 1);
 
-        mb.build(start);
+        mb.build();
 
         // bridge mazes and rooms
         BridgeBuilder bb = new BridgeBuilder(this);
@@ -114,7 +114,7 @@ public class World extends Grid {
         bb.build(probExtraConnections);
 
         // make maze more sparse
-        mb.reduceDeadEnds(20);
+        //mb.reduceDeadEnds(20);
     }
 
     /* ANIMATION -------------------------------------------------------------*/

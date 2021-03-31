@@ -15,7 +15,7 @@ import java.util.Random;
  * maze that fills the available world area.
  * @author Rob Masters
  */
-public class MazeBuilder implements Builder {
+public class MazeBuilder { //implements Builder {
     private World world;
     private Random random;
     private int iterations;
@@ -59,20 +59,26 @@ public class MazeBuilder implements Builder {
      * returns 0 upon successful completion.
      * @param start start point
      */
-    @Override
-    public int build(Point start) {
-        reset();
-
-        this.start = start;
-
-        if (!validStart(start)) {
-            return -1;
+    //@Override
+    public void build() {
+        for (start = findStart(); start != null; start = findStart()) {
+            System.out.println(start);
+            buildMaze();
         }
-
-        fringe.add(start);
-        buildMaze();
-
-        return 0;
+        //start = findStart();
+        //buildMaze();
+//        reset();
+//
+//        this.start = start;
+//
+//        if (!validStart(start)) {
+//            return -1;
+//        }
+//
+//        fringe.add(start);
+//        buildMaze();
+//
+//        return 0;
     }
 
     /**
@@ -92,11 +98,45 @@ public class MazeBuilder implements Builder {
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
 
     /**
+     * Finds a valid start point in the world. If one cannot be found, returns
+     * null.
+     * @return start point
+     */
+    private Point findStart() {
+        List<Point> all = world.listAllPoints();
+
+        for (Point p : world.listAllPoints()) {
+            if (isValidStart(p)) {
+                return p;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Builds a single maze originating at the instances current start point.
+     * Throws an exception if the start point is not valid.
+     */
+    private void buildMaze() {
+        reset();
+
+        if (!isValidStart(start)) {
+            throw new IllegalArgumentException(
+                    "Invalid start point for maze: " + start);
+        }
+
+        fringe.add(start);
+
+        buildMazeIter();
+    }
+
+    /**
      * Iterative helper method. Coninues to iterate until either the iteration
      * limit has been reached or there are no more points left to process in the
      * fringe.
      */
-    private void buildMaze() {
+    private void buildMazeIter() {
         while (!reachedIterationLimit() && !fringe.isEmpty()) {
             iterations++;
             Point p = fringe.remove();
@@ -212,7 +252,7 @@ public class MazeBuilder implements Builder {
      * be in a corner or at an edge.
      * @param start start point for maze
      */
-    private boolean validStart(Point start) {
+    private boolean isValidStart(Point start) {
         if (!world.contains(start)) {
             return false;
         }
@@ -299,8 +339,8 @@ public class MazeBuilder implements Builder {
 
         MazeBuilder mb = new MazeBuilder(world);
 
-        Point start = world.get(1, 1);
-        mb.build(start);
+        //Point start = world.get(1, 1);
+        mb.build();
 
         world.render();
     }
