@@ -14,13 +14,9 @@ import java.util.Random;
  * regions and rendering to screen.
  * @author Rob Masters
  */
-public class World extends NavigableTileGrid {
-    private Random random;
-    private boolean animate;
-    private TERenderer ter;
-    //private UnionFind<Point> regions;
-    ////private TETile[][] tiles;
-    //private State[][] states;
+public class TileGrid extends Grid {
+    private TETile[][] tiles;
+    private State[][] states;
 
     /* CONSTRUCTORS ----------------------------------------------------------*/
 
@@ -33,122 +29,84 @@ public class World extends NavigableTileGrid {
      * @param seed pseudo-random number generator seed
      * @param animate animation/no animation
      */
-    public World(int width, int height, long seed, String animate) {
+    public TileGrid(int width, int height) {
         super(width, height);
 
-        this.random = new Random(seed);
+        tiles = new TETile[width][height];
+        states = new State[width][height];
 
-        this.animate = animate.equals("animate") ? true : false;
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                tiles[x][y] = Tileset.GRASS;
+                Point p = get(x, y);
+                states[x][y] = State.EMPTY;
+            }
+        }
+    }
 
-        this.ter = new TERenderer();
-        ter.initialize(getWidth(), getHeight());
-
-//        tiles = new TETile[width][height];
-//        regions = new UnionFind<>();
-//        states = new State[width][height];
+//    /**
+//     * Constructor without animate parameter. Defaults to no animation.
+//     * @param width width
+//     * @param height height
+//     * @param seed pseudo-random number generator seed
+//     */
+//    public TileGrid(int width, int height, long seed) {
+//        this(width, height, seed, "");
+//    }
 //
-//        for (int x = 0; x < width; x++) {
-//            for (int y = 0; y < height; y++) {
-//                tiles[x][y] = Tileset.GRASS;
-//                Point p = get(x, y);
-//                regions.add(p);
-//                states[x][y] = State.EMPTY;
-//            }
-//        }
-    }
-
-    /**
-     * Constructor without animate parameter. Defaults to no animation.
-     * @param width width
-     * @param height height
-     * @param seed pseudo-random number generator seed
-     */
-    public World(int width, int height, long seed) {
-        this(width, height, seed, "");
-    }
-
-    /**
-     * Constructor without width and height parameters. Defaults to values in
-     * the Constants class.
-     * @param seed pseudo-random number generator seed
-     * @param animate animation/no animation
-     */
-    public World(long seed, String animate) {
-        this(WIDTH, HEIGHT, seed, animate);
-    }
-
-    /**
-     * Constructor without width, height and animate parameters. Defaults to
-     * width and height values in the Constants class and no animation.
-     * @param seed pseudo-random number generator seed
-     */
-    public World(long seed) {
-        this(WIDTH, HEIGHT, seed, "");
-    }
+//    /**
+//     * Constructor without width and height parameters. Defaults to values in
+//     * the Constants class.
+//     * @param seed pseudo-random number generator seed
+//     * @param animate animation/no animation
+//     */
+//    public TileGrid(long seed, String animate) {
+//        this(WIDTH, HEIGHT, seed, animate);
+//    }
+//
+//    /**
+//     * Constructor without width, height and animate parameters. Defaults to
+//     * width and height values in the Constants class and no animation.
+//     * @param seed pseudo-random number generator seed
+//     */
+//    public World(long seed) {
+//        this(WIDTH, HEIGHT, seed, "");
+//    }
 
     /* BUILD -----------------------------------------------------------------*/
 
-    public void build() {
-        // rooms
-        RoomBuilder rb = new RoomBuilder(this);
-
-        int attempts = 40;
-
-        for (int i = 0; i < attempts; i++) {
-            int result = rb.build();
-            //System.out.println("  >>> " + (result != -1 ? "SUCCESS" : "FAILED"));
-        }
-
-        // maze
-        MazeBuilder mb = new MazeBuilder(this);
-
-        //Point start = get(1, 1);
-
-        mb.build();
-
-        render();
-
-        // bridge mazes and rooms
-        BridgeBuilder bb = new BridgeBuilder(this);
-
-        double probExtraConnections = 0.1;
-
-        bb.build(probExtraConnections);
-
-        // make maze more sparse
-        mb.reduceDeadEnds(20);
-    }
-
-    /* ANIMATION -------------------------------------------------------------*/
-
-    /**
-     * Renders the current tile state to screen.
-     */
-    public void render() {
-        TETile[][] t = getTiles();
-        ter.renderFrame(t);
-    }
-
-    /**
-     * If animation has been specified, renders the current tile state to screen
-     * and pauses for 10ms.
-     */
-    public void animate() {
-        if (!animate) {
-            return;
-        }
-
-        render();
-
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-//    /* POINT LISTS -----------------------------------------------------------*/
+//    public void build() {
+//        // rooms
+//        RoomBuilder rb = new RoomBuilder(this);
 //
+//        int attempts = 40;
+//
+//        for (int i = 0; i < attempts; i++) {
+//            int result = rb.build();
+//            //System.out.println("  >>> " + (result != -1 ? "SUCCESS" : "FAILED"));
+//        }
+//
+//        // maze
+//        MazeBuilder mb = new MazeBuilder(this);
+//
+//        //Point start = get(1, 1);
+//
+//        mb.build();
+//
+//        // bridge mazes and rooms
+//        BridgeBuilder bb = new BridgeBuilder(this);
+//
+//        double probExtraConnections = 0.1;
+//
+//        bb.build(probExtraConnections);
+//
+//        // make maze more sparse
+//        //mb.reduceDeadEnds(20);
+//    }
+
+
+    /* POINT LISTS -----------------------------------------------------------*/
+
 //    // TODO Move to MazeBuilder
 //    /**
 //     * Returns a list of all dead ends in the world.
@@ -182,52 +140,6 @@ public class World extends NavigableTileGrid {
 //        return result;
 //    }
 
-    /* RANDOM ----------------------------------------------------------------*/
-
-    /**
-     * Returns a Random object that can be used to generate psuedo-random
-     * numbers.
-     * @return pseudo-random number generator
-     */
-    public Random getRandom() {
-        return random;
-    }
-
-//    /* REGIONS ---------------------------------------------------------------*/
-//
-//    /**
-//     * Connects the regions containing the given points. If one or more null
-//     * points are provided then no connections are made. Points p and q must be
-//     * contained in the world otherwise an exception will be thrown.
-//     * @param p point
-//     * @param q point
-//     */
-//    public void connect(Point p, Point q) {
-//        if (p == null || q == null) {
-//            return;
-//        }
-//
-//        validatePoint(p);
-//        validatePoint(q);
-//
-//        regions.connect(p, q);
-//    }
-//
-//    /**
-//     * Determines whether the two given points are in the same connected region.
-//     * Points p and q must be contained in the world otherwise an exception will
-//     * be thrown.
-//     * @param p point
-//     * @param q point
-//     * @return connected/not connected
-//     */
-//    public boolean isConnected(Point p, Point q) {
-//        validatePoint(p);
-//        validatePoint(q);
-//
-//        return regions.isConnected(p, q);
-//    }
-//
 //    /* STATES ----------------------------------------------------------------*/
 //
 //    // TODO remove these abstractions??
@@ -325,45 +237,45 @@ public class World extends NavigableTileGrid {
 //                break;
 //        }
 //    }
-//
-//    /* TILES -----------------------------------------------------------------*/
-//
-//    /**
-//     * Returns a 2D array of tiles corresponding to points in the 2D grid.
-//     * @return 2D tile array
-//     */
-//    private TETile[][] getTiles() {
-//        return tiles;
-//    }
-//
-//    /**
-//     * Sets the tile at the given point to the given tile. Throws an exception
-//     * if the point is not contained in the world.
-//     * @param p point
-//     * @param tile tile
-//     */
-//    private void setTile(Point p, TETile tile) {
-//        validatePoint(p);
-//        int x = p.getX();
-//        int y = p.getY();
-//        tiles[x][y] = tile;
-//    }
-//
-//    /**
-//     * Sets the tile at the point corresponding to the given coords to the given
-//     * tile. Throws an exception if the coords are outside the bounds of the
-//     * world.
-//     * @param x x-coord
-//     * @param y y-coord
-//     * @param tile tile
-//     */
-//    private void setTile(int x, int y, TETile tile) {
-//        Point p = get(x, y);  // get throws an exception if outside world
-//        setTile(p, tile);
-//    }
-//
-//    /* QUERIES ---------------------------------------------------------------*/
-//
+
+    /* TILES -----------------------------------------------------------------*/
+
+    /**
+     * Returns a 2D array of tiles corresponding to points in the 2D grid.
+     * @return 2D tile array
+     */
+    public TETile[][] getTiles() {
+        return tiles;
+    }
+
+    /**
+     * Sets the tile at the given point to the given tile. Throws an exception
+     * if the point is not contained in the world.
+     * @param p point
+     * @param tile tile
+     */
+    public void setTile(Point p, TETile tile) {
+        validatePoint(p);
+        int x = p.getX();
+        int y = p.getY();
+        tiles[x][y] = tile;
+    }
+
+    /**
+     * Sets the tile at the point corresponding to the given coords to the given
+     * tile. Throws an exception if the coords are outside the bounds of the
+     * world.
+     * @param x x-coord
+     * @param y y-coord
+     * @param tile tile
+     */
+    public void setTile(int x, int y, TETile tile) {
+        Point p = get(x, y);  // get throws an exception if outside world
+        setTile(p, tile);
+    }
+
+    /* QUERIES ---------------------------------------------------------------*/
+
 //    /**
 //     * Determines whether the point at the given coordinates is empty. Throws an
 //     * exception if the coords are not within the bounds of the world.
@@ -408,29 +320,29 @@ public class World extends NavigableTileGrid {
 //        return result;
 //    }
 //
-//    // TODO Move to MazeBuilder
-//    /**
-//     * Determines whether the given point is a dead end. Dead ends have only
-//     * one open exit. Throws an exception if the point is not contained in the
-//     * world.
-//     * @param p point
-//     * @return dead-end?
-//     */
-//    public boolean isDeadEnd(Point p) {
-//        validatePoint(p);
-//
-//        if (!isOpen(p)) {
-//            return false;
-//        }
-//
-//        List<Point> openExits = listOpenExits(p);
-//
-//        if (openExits.size() == 1) {
-//            return true;
-//        }
-//
-//        return false;
-//    }
+////    // TODO Move to MazeBuilder
+////    /**
+////     * Determines whether the given point is a dead end. Dead ends have only
+////     * one open exit. Throws an exception if the point is not contained in the
+////     * world.
+////     * @param p point
+////     * @return dead-end?
+////     */
+////    public boolean isDeadEnd(Point p) {
+////        validatePoint(p);
+////
+////        if (!isOpen(p)) {
+////            return false;
+////        }
+////
+////        List<Point> openExits = listOpenExits(p);
+////
+////        if (openExits.size() == 1) {
+////            return true;
+////        }
+////
+////        return false;
+////    }
 //
 //    /**
 //     * A point can be cleared if it is not open and not surrounded by any open
@@ -473,9 +385,9 @@ public class World extends NavigableTileGrid {
      * Builds a new world and renders it to screen.
      */
     public static void main(String[] args) {
-        //World world = new World(2873123, "animate");
-        World world = new World(2873123);
+        World world = new World(2873123, "animate");
         world.build();
         world.render();
     }
 }
+

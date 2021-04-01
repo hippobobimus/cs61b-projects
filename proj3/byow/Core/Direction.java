@@ -113,7 +113,16 @@ public enum Direction {
         return angle;
     }
 
-    /* DIRECTION LISTS -------------------------------*/
+    /* QUERIES ---------------------------------------------------------------*/
+
+    /**
+     * Returns true if the given direction is cardinal (UP, DOWN, LEFT, RIGHT).
+     */
+    public boolean isCardinal() {
+        return listCardinal().contains(this);
+    }
+
+    /* DIRECTION LISTS -------------------------------------------------------*/
 
     /**
      * Returns a list of all directions.

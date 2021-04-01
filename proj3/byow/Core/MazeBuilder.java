@@ -88,7 +88,8 @@ public class MazeBuilder { //implements Builder {
      * @param steps retraction steps
      */
     public void reduceDeadEnds(int steps) {
-        List<Point> deadEnds = world.listDeadEnds();
+        //List<Point> deadEnds = world.listDeadEnds();
+        List<Point> deadEnds = world.pathway.listLeafPoints();
 
         for (int i = 0; i < steps; i++) {
             deadEnds = reduceDeadEnds(deadEnds);
@@ -284,15 +285,22 @@ public class MazeBuilder { //implements Builder {
      * @return updated list of dead ends
      */
     private List<Point> reduceDeadEnds(List<Point> deadEnds) {
+        System.out.println("deadends" + deadEnds);
         List<Point> newDeadEnds = new ArrayList<>();;
 
         for (Point deadEnd : deadEnds) {
+            //System.out.println("deadend= " + deadEnd);
             Point newDE = edgeTo.get(deadEnd).from();
             retractDeadEnd(deadEnd);
-            if (world.isDeadEnd(newDE)) {
+            //System.out.println("potential deadend= " + newDE);
+            //System.out.println("deadend? " + world.pathway.isLeaf(newDE));
+            if (world.pathway.isLeaf(newDE)) {
                 newDeadEnds.add(newDE);
             }
         }
+
+        newDeadEnds = world.pathway.listLeafPoints();
+        System.out.println("New deadends" + newDeadEnds);
 
         return newDeadEnds;
     }
@@ -312,16 +320,16 @@ public class MazeBuilder { //implements Builder {
             return;
         }
 
-        Direction dir = e.direction();
+//        Direction dir = e.direction();
 
-        List<Point> ahead = world.ahead(p, dir);
+//        List<Point> ahead = world.ahead(p, dir);
 
         // clear points ahead if possible.
-        for (Point a : ahead) {
-            if (world.canClear(a)) {
-                world.clear(a);
-            }
-        }
+//        for (Point a : ahead) {
+//            if (world.canClear(a)) {
+//                world.close(a);
+//            }
+//        }
 
         // remove edge to point.
         edgeTo.remove(p);
