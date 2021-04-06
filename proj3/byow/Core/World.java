@@ -10,17 +10,13 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * An extension of the 2D grid of points, incorporating tiles, states, connected
- * regions and rendering to screen.
+ * An extension of the navigable tile grid, incorporating rendering to screen.
  * @author Rob Masters
  */
 public class World extends NavigableTileGrid {
     private Random random;
     private boolean animate;
     private TERenderer ter;
-    //private UnionFind<Point> regions;
-    ////private TETile[][] tiles;
-    //private State[][] states;
 
     /* CONSTRUCTORS ----------------------------------------------------------*/
 
@@ -42,19 +38,6 @@ public class World extends NavigableTileGrid {
 
         this.ter = new TERenderer();
         ter.initialize(getWidth(), getHeight());
-
-//        tiles = new TETile[width][height];
-//        regions = new UnionFind<>();
-//        states = new State[width][height];
-//
-//        for (int x = 0; x < width; x++) {
-//            for (int y = 0; y < height; y++) {
-//                tiles[x][y] = Tileset.GRASS;
-//                Point p = get(x, y);
-//                regions.add(p);
-//                states[x][y] = State.EMPTY;
-//            }
-//        }
     }
 
     /**
@@ -147,41 +130,6 @@ public class World extends NavigableTileGrid {
         }
     }
 
-//    /* POINT LISTS -----------------------------------------------------------*/
-//
-//    // TODO Move to MazeBuilder
-//    /**
-//     * Returns a list of all dead ends in the world.
-//     * @return dead ends list
-//     */
-//    public List<Point> listDeadEnds() {
-//        List<Point> result = new ArrayList<>();
-//
-//        for (Point p : listAllPoints()) {
-//            if (isDeadEnd(p)) {
-//                result.add(p);
-//            }
-//        }
-//
-//        return result;
-//    }
-//
-//    /**
-//     * Returns a list of open exits from the given point.
-//     * @return list open exits
-//     */
-//    public List<Point> listOpenExits(Point p) {
-//        List<Point> result = new ArrayList<>();
-//
-//        for (Point exit : exits(p)) {  // exits throws excptn if p not in world
-//            if (isOpen(exit)) {
-//                result.add(exit);
-//            }
-//        }
-//
-//        return result;
-//    }
-
     /* RANDOM ----------------------------------------------------------------*/
 
     /**
@@ -192,6 +140,31 @@ public class World extends NavigableTileGrid {
     public Random getRandom() {
         return random;
     }
+
+    /* MAIN METHOD -----------------------------------------------------------*/
+
+    /**
+     * Builds a new world and renders it to screen.
+     */
+    public static void main(String[] args) {
+        //World world = new World(2873123, "animate");
+        World world = new World(2873123);
+        world.build();
+        world.render();
+    }
+}
+//    /* PRIVATE HELPER METHODS ------------------------------------------------*/
+//
+//    /**
+//     * Checks that the given point is contained within the grid and, if not,
+//     * throws an exception.
+//     * @param p point
+//     */
+//    private void validatePoint(Point p) {
+//        if (!contains(p)) {
+//            throw new IllegalArgumentException();
+//        }
+//    }
 
 //    /* REGIONS ---------------------------------------------------------------*/
 //
@@ -454,28 +427,38 @@ public class World extends NavigableTileGrid {
 //        return true;
 //    }
 
-    /* PRIVATE HELPER METHODS ------------------------------------------------*/
+//    /* POINT LISTS -----------------------------------------------------------*/
+//
+//    // TODO Move to MazeBuilder
+//    /**
+//     * Returns a list of all dead ends in the world.
+//     * @return dead ends list
+//     */
+//    public List<Point> listDeadEnds() {
+//        List<Point> result = new ArrayList<>();
+//
+//        for (Point p : listAllPoints()) {
+//            if (isDeadEnd(p)) {
+//                result.add(p);
+//            }
+//        }
+//
+//        return result;
+//    }
+//
+//    /**
+//     * Returns a list of open exits from the given point.
+//     * @return list open exits
+//     */
+//    public List<Point> listOpenExits(Point p) {
+//        List<Point> result = new ArrayList<>();
+//
+//        for (Point exit : exits(p)) {  // exits throws excptn if p not in world
+//            if (isOpen(exit)) {
+//                result.add(exit);
+//            }
+//        }
+//
+//        return result;
+//    }
 
-    /**
-     * Checks that the given point is contained within the grid and, if not,
-     * throws an exception.
-     * @param p point
-     */
-    private void validatePoint(Point p) {
-        if (!contains(p)) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    /* MAIN METHOD -----------------------------------------------------------*/
-
-    /**
-     * Builds a new world and renders it to screen.
-     */
-    public static void main(String[] args) {
-        //World world = new World(2873123, "animate");
-        World world = new World(2873123);
-        world.build();
-        world.render();
-    }
-}

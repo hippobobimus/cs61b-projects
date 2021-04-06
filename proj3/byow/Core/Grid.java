@@ -64,14 +64,6 @@ public class Grid {
     }
 
     /**
-     * Returns a list of all points in the grid.
-     * @return list of all points
-     */
-    public List<Point> listAllPoints() {
-        return pointsList;
-    }
-
-    /**
      * Returns the Point at the given grid coordinates. Throws an exception
      * if the given coords are outside of the grid boundaries.
      * @param x x-coord
@@ -133,14 +125,31 @@ public class Grid {
     }
 
     /**
-     * Returns the (up to 4) Points directly above, below and to the left and right of the
-     * given Point. Only returns points contained within the grid boundaries.
+     * Determines whether the given point is at an edge/corner of the grid.
+     * Throws an exception if the given point is not contained within the grid.
      * @param p point
-     * @return exit points
+     * @return true/false
      */
-    public List<Point> exits(Point p) {
-        List<Direction> dirs = Direction.listCardinal();
-        return neighbours(p, dirs);
+    public boolean isAtGridBoundary(Point p) {
+        validatePoint(p);
+
+        List<Point> nbrs = listNeighbours(p);
+
+        if (nbrs.size() == 8) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /* POINT LISTS -----------------------------------------------------------*/
+
+    /**
+     * Returns a list of all points in the grid.
+     * @return list of all points
+     */
+    public List<Point> listAllPoints() {
+        return pointsList;
     }
 
     /**
@@ -149,8 +158,19 @@ public class Grid {
      * @param p point
      * @return surrounding points
      */
-    public List<Point> surrounding(Point p) {
+    public List<Point> listNeighbours(Point p) {
         List<Direction> dirs = Direction.listAll();
+        return neighbours(p, dirs);
+    }
+
+    /**
+     * Returns the (up to 4) Points directly above, below and to the left and right of the
+     * given Point. Only returns points contained within the grid boundaries.
+     * @param p point
+     * @return cardinal points
+     */
+    public List<Point> listCardinalNeighbours(Point p) {
+        List<Direction> dirs = Direction.listCardinal();
         return neighbours(p, dirs);
     }
 
@@ -162,7 +182,7 @@ public class Grid {
      * @param d direction
      * @return arc of points
      */
-    public List<Point> arc(Point p, Direction d) {
+    public List<Point> listArcNeighbours(Point p, Direction d) {
         List<Direction> dirs = d.listArc();
         return neighbours(p, dirs);
     }
@@ -175,7 +195,7 @@ public class Grid {
      * @param d direction of travel
      * @return points ahead
      */
-    public List<Point> ahead(Point p, Direction d) {
+    public List<Point> listNeighboursAhead(Point p, Direction d) {
         List<Direction> dirs = d.listAhead();
         return neighbours(p, dirs);
     }
@@ -187,14 +207,14 @@ public class Grid {
      * @param p point
      */
     private void validatePoint(Point p) {
-        if (contains(p)) {
+        if (!contains(p)) {
             throw new IllegalArgumentException(
                     "Point not contained in grid: " + p);
         }
     }
 
     /**
-     * Returns a List of Points surrounding the given Point in the given
+     * Returns a List of Points neighbouring the given Point in the given
      * directions.
      * @param p point
      * @param dirs directions

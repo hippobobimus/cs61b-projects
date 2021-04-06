@@ -9,6 +9,7 @@ public class TestCore {
 
         Class<?>[] testClasses = new Class<?>[] {
             TestEdge.class,
+            TestDedupPQ.class,
             TestDirection.class,
             TestMazeBuilder.class,
             TestPoint.class,
