@@ -124,36 +124,3 @@ public class BridgedWorld extends MazeWorld {
         bw.render();
     }
 }
-//    /**
-//     * TODO
-//     * Surrounding open points.
-//     */
-//    private List<Point> surroundingOpenCardinalPoints(Point p) {
-//        List<Point> result = new ArrayList<>();
-//
-//        for (Point s : world.exits(p)) {
-//            if (world.isOpen(s)) {
-//                result.add(s);
-//            }
-//        }
-//
-//        return result;
-//    }
-
-//    /**
-//     * Opens the given point and connects it to any open exits.
-//     * @param bridge bridge point
-//     */
-//    private void openBridge(Point bridge) {
-//        world.open(bridge);
-//        world.render();
-//        //System.out.println(world.pathway.get(bridge));
-//        //System.out.println(world.pathway);
-//
-//        for (Point exit : world.listOpenExits(bridge)) {
-//            world.connect(bridge, exit);
-//        }
-//
-//        world.animate();
-//    }
-
