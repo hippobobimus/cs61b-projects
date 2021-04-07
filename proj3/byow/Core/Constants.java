@@ -5,9 +5,13 @@ package byow.Core;
  * @author Rob Masters
  */
 public class Constants {
-    // Dimensions of the tiled area.
+    // Dimensions of the tiled area in tiles.
     public static final int WIDTH = 50;
     public static final int HEIGHT = 50;
+
+    // Dimensions of the window in pixels.
+    public static final int WINDOW_WIDTH = WIDTH * 16;
+    public static final int WINDOW_HEIGHT = HEIGHT * 16;
 
     // Element dimension limits.
     public static final int MIN_ROOM_WIDTH = 4;

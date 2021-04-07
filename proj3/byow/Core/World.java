@@ -1,22 +1,16 @@
 package byow.Core;
 
 import static byow.Core.Constants.*;
-import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
-import byow.TileEngine.Tileset;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 /**
- * An extension of the navigable tile grid, incorporating rendering to screen.
+ * A wrapper around the dungeon generation class BridgedWorld.
  * @author Rob Masters
  */
-public class World extends NavigableTileGrid {
-    private Random random;
-    private boolean animate;
-    private TERenderer ter;
+public class World {
+    private BridgedWorld world;
 
     /* CONSTRUCTORS ----------------------------------------------------------*/
 
@@ -30,14 +24,8 @@ public class World extends NavigableTileGrid {
      * @param animate animation/no animation
      */
     public World(int width, int height, long seed, String animate) {
-        super(width, height);
-
-        this.random = new Random(seed);
-
-        this.animate = animate.equals("animate") ? true : false;
-
-        this.ter = new TERenderer();
-        ter.initialize(getWidth(), getHeight());
+        Random rand = new Random(seed);
+        this.world = new BridgedWorld(width, height, rand, animate);
     }
 
     /**
@@ -69,76 +57,37 @@ public class World extends NavigableTileGrid {
         this(WIDTH, HEIGHT, seed, "");
     }
 
-    /* BUILD -----------------------------------------------------------------*/
-
-    public void build() {
-        // rooms
-        RoomBuilder rb = new RoomBuilder(this);
-
-        int attempts = 40;
-
-        for (int i = 0; i < attempts; i++) {
-            int result = rb.build();
-            //System.out.println("  >>> " + (result != -1 ? "SUCCESS" : "FAILED"));
-        }
-
-        // maze
-        MazeBuilder mb = new MazeBuilder(this);
-
-        //Point start = get(1, 1);
-
-        mb.build();
-
-        render();
-
-        // bridge mazes and rooms
-        BridgeBuilder bb = new BridgeBuilder(this);
-
-        double probExtraConnections = 0.1;
-
-        bb.build(probExtraConnections);
-
-        // make maze more sparse
-        mb.reduceDeadEnds(20);
-    }
-
-    /* ANIMATION -------------------------------------------------------------*/
+    /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
-     * Renders the current tile state to screen.
+     * Populates the world with a randomly generated connected dungeon comprised
+     * of rooms and tunnels.
+     */
+    public void build() {
+        int roomPlacementAttempts = 40;
+        int maxMazeAlgoIterations = -1;
+        double probExtraConnections = 0.1;
+        int deadEndPruningSteps = 20;
+
+        world.buildRooms(roomPlacementAttempts);
+        world.mazeFill(maxMazeAlgoIterations);
+        world.bridgeRegions(probExtraConnections);
+        world.reduceDeadEnds(deadEndPruningSteps);
+    }
+
+    /**
+     * Renders the current world state to screen.
      */
     public void render() {
-        TETile[][] t = getTiles();
-        ter.renderFrame(t);
+        world.render();
     }
 
     /**
-     * If animation has been specified, renders the current tile state to screen
-     * and pauses for 10ms.
+     * Returns the current tile frame.
+     * @return 2D tile array
      */
-    public void animate() {
-        if (!animate) {
-            return;
-        }
-
-        render();
-
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /* RANDOM ----------------------------------------------------------------*/
-
-    /**
-     * Returns a Random object that can be used to generate psuedo-random
-     * numbers.
-     * @return pseudo-random number generator
-     */
-    public Random getRandom() {
-        return random;
+    public TETile[][] tiles() {
+        return world.getTiles();
     }
 
     /* MAIN METHOD -----------------------------------------------------------*/
@@ -148,9 +97,9 @@ public class World extends NavigableTileGrid {
      */
     public static void main(String[] args) {
         //World world = new World(2873123, "animate");
-        World world = new World(2873123);
-        world.build();
-        world.render();
+        World w = new World(2873123);
+        w.build();
+        w.render();
     }
 }
 //    /* PRIVATE HELPER METHODS ------------------------------------------------*/
@@ -462,3 +411,70 @@ public class World extends NavigableTileGrid {
 //        return result;
 //    }
 
+
+//    /* ANIMATION -------------------------------------------------------------*/
+//
+//    /**
+//     * Renders the current tile state to screen.
+//     */
+//    public void render() {
+//        TETile[][] t = getTiles();
+//        ter.renderFrame(t);
+//    }
+//
+//    /**
+//     * If animation has been specified, renders the current tile state to screen
+//     * and pauses for 10ms.
+//     */
+//    public void animate() {
+//        if (!animate) {
+//            return;
+//        }
+//
+//        render();
+//
+//        try {
+//            Thread.sleep(10);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    /* RANDOM ----------------------------------------------------------------*/
+//
+//    /**
+//     * Returns a Random object that can be used to generate psuedo-random
+//     * numbers.
+//     * @return pseudo-random number generator
+//     */
+//    public Random getRandom() {
+//        return random;
+//    }
+//        // rooms
+//        RoomBuilder rb = new RoomBuilder(this);
+//
+//        int attempts = 40;
+//
+//        for (int i = 0; i < attempts; i++) {
+//            int result = rb.build();
+//            //System.out.println("  >>> " + (result != -1 ? "SUCCESS" : "FAILED"));
+//        }
+//
+//        // maze
+//        MazeBuilder mb = new MazeBuilder(this);
+//
+//        //Point start = get(1, 1);
+//
+//        mb.build();
+//
+//        render();
+//
+//        // bridge mazes and rooms
+//        BridgeBuilder bb = new BridgeBuilder(this);
+//
+//        double probExtraConnections = 0.1;
+//
+//        bb.build(probExtraConnections);
+//
+//        // make maze more sparse
+//        mb.reduceDeadEnds(20);
