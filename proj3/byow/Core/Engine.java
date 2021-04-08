@@ -3,6 +3,8 @@ package byow.Core;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +13,7 @@ import edu.princeton.cs.introcs.StdDraw;
 public class Engine {
     private World world;
     private boolean gameInProgress = false;
+    private StringBuilder inputHistory = new StringBuilder();
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
@@ -62,6 +65,9 @@ public class Engine {
         while (input.possibleNextInput()) {
             char c = input.getNextKey();
             switch(c) {
+                case 'H':
+                    // TODO toggle help
+                    break;
                 case 'N':
                     if (!gameInProgress) {
                         newGame(input);
@@ -91,7 +97,7 @@ public class Engine {
      * @param input input source
      */
     private void processCommand(char c) {
-        if (c == 'Q') {
+        if (c == 'Q') { // do not store this input.
             quit();
         }
     }
@@ -102,6 +108,8 @@ public class Engine {
      * @param input input source
      */
     private void newGame(InputSource input) {
+        inputHistory.append("N");
+
         this.gameInProgress = true;
 
         if (input.type().equals(InputType.KEYBOARD)) {
@@ -114,6 +122,8 @@ public class Engine {
         char c;
         while (input.possibleNextInput()) {
             c = input.getNextKey();
+            inputHistory.append(c);
+
             if (c == 'S') {
                 break;
             } else if (Character.isDigit(c)) {
@@ -135,14 +145,17 @@ public class Engine {
      * Loads the previous game state.
      */
     private void loadGame() {
-        // TODO
+        InputSource savedInput = GameData.getInputSource();
+
+        processInput(savedInput);
     }
 
     /**
      * Ends the program and saves the current game state.
      */
     private void quit() {
-        // TODO Save game state
+        String data = inputHistory.toString();
+        GameData.overwriteSaveData(data);
         System.exit(0);
     }
 

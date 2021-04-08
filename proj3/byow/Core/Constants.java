@@ -18,4 +18,7 @@ public class Constants {
     public static final int MAX_ROOM_WIDTH = 10;
     public static final int MIN_ROOM_HEIGHT = 4;
     public static final int MAX_ROOM_HEIGHT = 10;
+
+    // Saving
+    public static final String SAVE_FILE_PATH = "data.txt";
 }
