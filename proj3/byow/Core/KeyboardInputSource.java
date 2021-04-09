@@ -13,9 +13,6 @@ public class KeyboardInputSource implements InputSource {
 
     public KeyboardInputSource() {
         StdDraw.setCanvasSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        StdDraw.text(0.5, 0.55, "New Game (N)");
-        StdDraw.text(0.5, 0.5, "Load Game (L)");
-        StdDraw.text(0.5, 0.45, "Quit (:Q)");
     }
 
     /**

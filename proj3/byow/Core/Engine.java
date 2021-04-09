@@ -22,6 +22,11 @@ public class Engine {
     public void interactWithKeyboard() {
         InputSource inputSource = new KeyboardInputSource();
 
+        StdDraw.text(0.5, 0.6, "New Game (N)");
+        StdDraw.text(0.5, 0.55, "New Game with Animated World Gen. (A)");
+        StdDraw.text(0.5, 0.5, "Load Game (L)");
+        StdDraw.text(0.5, 0.45, "Quit (:Q)");
+
         processInput(inputSource);
     }
 
@@ -65,12 +70,17 @@ public class Engine {
         while (input.possibleNextInput()) {
             char c = input.getNextKey();
             switch(c) {
+                case 'A':  // new animated game
+                    if (!gameInProgress) {
+                        newGame(input, "animate");
+                    }
+                    break;
                 case 'H':
                     // TODO toggle help
                     break;
                 case 'N':
                     if (!gameInProgress) {
-                        newGame(input);
+                        newGame(input, "");
                     }
                     break;
                 case 'L':
@@ -104,10 +114,12 @@ public class Engine {
 
     /**
      * Interrogates the input source for the user entered seed value and then
-     * generates a new world, rendering it to screen.
+     * generates a new world, rendering it to screen. If the string "animate" is
+     * supplied, the world generation will be animated.
      * @param input input source
+     * @param animated whether to animate the world generation
      */
-    private void newGame(InputSource input) {
+    private void newGame(InputSource input, String animated) {
         inputHistory.append("N");
 
         this.gameInProgress = true;
@@ -136,9 +148,19 @@ public class Engine {
 
         long seed = Long.parseLong(temp, 10);
 
-        this.world = new World(seed);
+        this.world = new World(seed, animated);
         world.build();
         world.render();
+    }
+
+    /**
+     * Interrogates the input source for the user entered seed value and then
+     * generates a new world, rendering it to screen. Does not animate the
+     * world generation.
+     * @param input input source
+     */
+    private void newGame(InputSource input) {
+        newGame(input, "");
     }
 
     /**

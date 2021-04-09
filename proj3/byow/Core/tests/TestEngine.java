@@ -14,7 +14,7 @@ public class TestEngine {
 
         Random rand = new Random();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1000; i++) {
             Long seed = Math.abs(rand.nextLong());
             String input = "n" + Long.toString(seed) + "s";
             eng.interactWithInputString(input);
