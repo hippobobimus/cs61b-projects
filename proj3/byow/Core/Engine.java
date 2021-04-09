@@ -63,59 +63,77 @@ public class Engine {
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
 
     /**
+     * Moves the avatar in the given direction and renders the updated world to
+     * screen.
+     * @param d direction of travel
+     */
+    private void move(Direction d) {
+        world.moveAvatar(d);
+        world.render();
+    }
+
+    /**
      * Takes an input source, parsing and processing all available input from it.
      * @param input input source
      */
     private void processInput(InputSource input) {
         while (input.possibleNextInput()) {
-            char c = input.getNextKey();
-            switch(c) {
-                case 'W':
-                    if (gameInProgress) {
-                        world.moveAvatar(Direction.UP);
-                        world.render();
-                    }
-                    break;
-                case 'A':
-                    if (gameInProgress) {
-                        world.moveAvatar(Direction.LEFT);
-                        world.render();
-                    } else {  // new animated game
-                        newGame(input, "animate");
-                    }
-                    break;
-                case 'S':
-                    if (gameInProgress) {
-                        world.moveAvatar(Direction.DOWN);
-                        world.render();
-                    }
-                    break;
-                case 'D':
-                    if (gameInProgress) {
-                        world.moveAvatar(Direction.RIGHT);
-                        world.render();
-                    }
-                    break;
-                case 'H':
-                    // TODO toggle help
-                    break;
-                case 'N':
-                    if (!gameInProgress) {
-                        newGame(input, "");
-                    }
-                    break;
-                case 'L':
-                    if (!gameInProgress) {
-                        loadGame();
-                    }
-                    break;
-                case ':':
-                    c = input.getNextKey();
-                    processCommand(c);
-                    break;
-                default:
-                    break;
+            if (gameInProgress) {
+                processInGameInput(input);
+            } else {
+                processPreGameInput(input);
             }
+        }
+    }
+
+    /**
+     */
+    private void processPreGameInput(InputSource input) {
+        char c = input.getNextKey();
+        switch(c) {
+            case 'A':
+                newGame(input, "animate");
+                break;
+            case 'L':
+                loadGame();
+                break;
+            case 'N':
+                newGame(input);
+                break;
+            case ':':
+                c = input.getNextKey();
+                processCommand(c);
+                break;
+            default:
+                break;
+        }
+    }
+    /**
+     */
+    private void processInGameInput(InputSource input) {
+        char c = input.getNextKey();
+        switch(c) {
+            case 'W':
+                move(Direction.UP);
+                break;
+            case 'A':
+                move(Direction.LEFT);
+                break;
+            case 'S':
+                move(Direction.DOWN);
+                break;
+            case 'D':
+                move(Direction.RIGHT);
+                break;
+            case 'H':
+                // TODO toggle help
+                break;
+            case ':':
+                c = input.getNextKey();
+                processCommand(c);
+                break;
+            default:
+                break;
         }
     }
 

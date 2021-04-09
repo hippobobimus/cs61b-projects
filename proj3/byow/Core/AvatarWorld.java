@@ -47,6 +47,8 @@ public class AvatarWorld extends BridgedWorld {
      */
     public void move(Direction d) {
         setAvatarTile(d);
+        setTile(position, avatarTile);
+
         Point destination = pathway.getNeighbour(this.position, d);
         if (destination != null) {
             move(destination);

@@ -30,6 +30,7 @@ public class KeyboardInputSource implements InputSource {
                 }
                 return c;
             }
+            StdDraw.pause(100);  // wait 100ms before polling keyboard again.
         }
     }
 
