@@ -10,7 +10,7 @@ import java.util.Random;
  * @author Rob Masters
  */
 public class World {
-    private BridgedWorld world;
+    private AvatarWorld world;
 
     /* CONSTRUCTORS ----------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ public class World {
      */
     public World(int width, int height, long seed, String animate) {
         Random rand = new Random(seed);
-        this.world = new BridgedWorld(width, height, rand, animate);
+        this.world = new AvatarWorld(width, height, rand, animate);
     }
 
     /**
@@ -73,6 +73,8 @@ public class World {
         world.mazeFill(maxMazeAlgoIterations);
         world.bridgeRegions(probExtraConnections);
         world.reduceDeadEnds(deadEndPruningSteps);
+
+        moveAvatar();
     }
 
     /**
@@ -88,6 +90,34 @@ public class World {
      */
     public TETile[][] tiles() {
         return world.getTiles();
+    }
+
+    /**
+     * Moves the avatar to the given point. The point must be on the pathway,
+     * if it isn't the avatar doesn't move.
+     * @param p destination point
+     */
+    public void moveAvatar(Point p) {
+        world.move(p);
+    }
+
+
+    /**
+     * Moves the avatar to a random point within the pathway. If there are no
+     * points available on the pathway, the avatar doesn't move.
+     */
+    public void moveAvatar() {
+        world.move();
+    }
+
+    /**
+     * Moves the avatar one step in the given direction. The avatar will only
+     * move in cardinal directions (UP, DOWN, LEFT, RIGHT) and onyl within the
+     * pathway.
+     * @param d direction to move in
+     */
+    public void moveAvatar(Direction d) {
+        world.move(d);
     }
 
     /* MAIN METHOD -----------------------------------------------------------*/

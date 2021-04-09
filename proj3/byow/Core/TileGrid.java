@@ -52,6 +52,18 @@ public class TileGrid extends Grid {
     }
 
     /**
+     * Returns the tile at the given position. Throws an exception if the point
+     * is not contained within the world.
+     * @param p point
+     */
+    public TETile getTile(Point p) {
+        int x = p.getX();
+        int y = p.getY();
+
+        return tiles[x][y];
+    }
+
+    /**
      * Sets the tile at the given point to the given tile. Throws an exception
      * if the point is not contained in the world.
      * @param p point

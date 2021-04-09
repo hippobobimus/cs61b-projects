@@ -70,9 +70,30 @@ public class Engine {
         while (input.possibleNextInput()) {
             char c = input.getNextKey();
             switch(c) {
-                case 'A':  // new animated game
-                    if (!gameInProgress) {
+                case 'W':
+                    if (gameInProgress) {
+                        world.moveAvatar(Direction.UP);
+                        world.render();
+                    }
+                    break;
+                case 'A':
+                    if (gameInProgress) {
+                        world.moveAvatar(Direction.LEFT);
+                        world.render();
+                    } else {  // new animated game
                         newGame(input, "animate");
+                    }
+                    break;
+                case 'S':
+                    if (gameInProgress) {
+                        world.moveAvatar(Direction.DOWN);
+                        world.render();
+                    }
+                    break;
+                case 'D':
+                    if (gameInProgress) {
+                        world.moveAvatar(Direction.RIGHT);
+                        world.render();
                     }
                     break;
                 case 'H':

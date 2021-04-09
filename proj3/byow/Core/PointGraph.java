@@ -33,6 +33,15 @@ public class PointGraph implements Iterable<Point> {
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
+     * Returns a list of all points on the pathway.
+     * @return list of all pathway points
+     */
+    public List<Point> listAllPoints() {
+        List<Point> result = new ArrayList<>(points);
+        return result;
+    }
+
+    /**
      * Returns a list of all leaf points (degree 1) in the graph.
      * @return list of leaf points
      */
@@ -176,6 +185,7 @@ public class PointGraph implements Iterable<Point> {
 
     /**
      * Returns the point neighbouring the given point in the given direction.
+     * Returns null if there is not a neighbouring point in the given direction.
      * Throws an exception if the given point is not contained in the graph.
      * @param p point
      * @param d direction
