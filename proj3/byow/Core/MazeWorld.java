@@ -244,7 +244,7 @@ public class MazeWorld extends RoomWorld {
     public static void main(String[] args) {
         Random rand = new Random(2873123);
 
-        MazeWorld mw = new MazeWorld(WIDTH, HEIGHT, rand, "animate");
+        MazeWorld mw = new MazeWorld(WINDOW_WIDTH, WINDOW_HEIGHT, rand, "animate");
 
         mw.mazeFill(-1);
 

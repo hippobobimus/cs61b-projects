@@ -6,7 +6,8 @@ import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 
 /**
- * An extension of the 2D grid of points incorporating tiles.
+ * An extension of the 2D grid of points incorporating tiles and rendering to
+ * screen.
  * @author Rob Masters
  */
 public class TileGrid extends Grid {
@@ -19,8 +20,8 @@ public class TileGrid extends Grid {
     /**
      * Full constructor for a 2D tile grid. Initially the tile grid is filled
      * with grass tiles.
-     * @param width width
-     * @param height height
+     * @param width width of the map
+     * @param height height of the map
      * @param animate animation/no animation
      */
     public TileGrid(int width, int height, String animate) {
@@ -29,7 +30,8 @@ public class TileGrid extends Grid {
         this.animate = animate.equals("animate") ? true : false;
 
         this.ter = new TERenderer();
-        ter.initialize(getWidth(), getHeight());
+        // allow for HUD area above map.
+        ter.initialize(getWidth(), getHeight() + HUD_HEIGHT);
 
         tiles = new TETile[width][height];
 

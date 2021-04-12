@@ -125,7 +125,7 @@ public class RoomWorld extends NavigableTileGrid {
     public static void main(String[] args) {
         Random rand = new Random(2873123);
 
-        RoomWorld rw = new RoomWorld(WIDTH, HEIGHT, rand, "animate");
+        RoomWorld rw = new RoomWorld(WINDOW_WIDTH, WINDOW_HEIGHT, rand, "animate");
 
         rw.buildRooms(40);
 

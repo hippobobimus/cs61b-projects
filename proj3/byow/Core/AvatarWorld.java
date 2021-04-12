@@ -128,7 +128,7 @@ public class AvatarWorld extends BridgedWorld {
     public static void main(String[] args) {
         Random rand = new Random(2873123);
 
-        AvatarWorld aw = new AvatarWorld(WIDTH, HEIGHT, rand, "");
+        AvatarWorld aw = new AvatarWorld(WINDOW_WIDTH, WINDOW_HEIGHT, rand, "");
 
         aw.buildRooms(40);
         aw.mazeFill(-1);

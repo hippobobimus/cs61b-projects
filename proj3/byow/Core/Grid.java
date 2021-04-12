@@ -37,14 +37,6 @@ public class Grid {
         }
     }
 
-    /**
-     * Constructor without width or height. Defaults to values set in the
-     * Constants module.
-     */
-    public Grid() {
-        this(WIDTH, HEIGHT);
-    }
-
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**

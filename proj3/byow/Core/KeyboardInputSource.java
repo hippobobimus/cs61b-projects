@@ -12,7 +12,7 @@ public class KeyboardInputSource implements InputSource {
     private static final InputType type = InputType.KEYBOARD;
 
     public KeyboardInputSource() {
-        StdDraw.setCanvasSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+        StdDraw.setCanvasSize(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX);
     }
 
     /**

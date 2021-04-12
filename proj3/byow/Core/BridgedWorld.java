@@ -115,7 +115,7 @@ public class BridgedWorld extends MazeWorld {
     public static void main(String[] args) {
         Random rand = new Random(2873123);
 
-        BridgedWorld bw = new BridgedWorld(WIDTH, HEIGHT, rand, "animate");
+        BridgedWorld bw = new BridgedWorld(WINDOW_WIDTH, WINDOW_HEIGHT, rand, "animate");
 
         bw.buildRooms(40);
         bw.mazeFill(-1);

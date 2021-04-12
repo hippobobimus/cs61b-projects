@@ -5,13 +5,20 @@ package byow.Core;
  * @author Rob Masters
  */
 public class Constants {
-    // Dimensions of the tiled area in tiles.
-    public static final int WIDTH = 50;
-    public static final int HEIGHT = 50;
+    // Dimensions of the gameplay area in tiles.
+    public static final int MAP_WIDTH = 50;
+    public static final int MAP_HEIGHT = 50;
+
+    // Height of the top HUD bar in tiles.
+    public static final int HUD_HEIGHT = 2;
+
+    // Dimensions of the window in tiles.
+    public static final int WINDOW_WIDTH = MAP_WIDTH;
+    public static final int WINDOW_HEIGHT = (MAP_HEIGHT + HUD_HEIGHT);
 
     // Dimensions of the window in pixels.
-    public static final int WINDOW_WIDTH = WIDTH * 16;
-    public static final int WINDOW_HEIGHT = HEIGHT * 16;
+    public static final int WINDOW_WIDTH_PX = WINDOW_WIDTH * 16;
+    public static final int WINDOW_HEIGHT_PX = WINDOW_HEIGHT * 16;
 
     // Element dimension limits.
     public static final int MIN_ROOM_WIDTH = 4;

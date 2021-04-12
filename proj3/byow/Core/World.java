@@ -45,7 +45,7 @@ public class World {
      * @param animate animation/no animation
      */
     public World(long seed, String animate) {
-        this(WIDTH, HEIGHT, seed, animate);
+        this(MAP_WIDTH, MAP_HEIGHT, seed, animate);
     }
 
     /**
@@ -54,7 +54,7 @@ public class World {
      * @param seed pseudo-random number generator seed
      */
     public World(long seed) {
-        this(WIDTH, HEIGHT, seed, "");
+        this(MAP_WIDTH, MAP_HEIGHT, seed, "");
     }
 
     /* PUBLIC METHODS --------------------------------------------------------*/
