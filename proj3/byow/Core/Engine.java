@@ -115,15 +115,19 @@ public class Engine {
         switch(c) {
             case 'W':
                 move(Direction.UP);
+                inputHistory.append(c);
                 break;
             case 'A':
                 move(Direction.LEFT);
+                inputHistory.append(c);
                 break;
             case 'S':
                 move(Direction.DOWN);
+                inputHistory.append(c);
                 break;
             case 'D':
                 move(Direction.RIGHT);
+                inputHistory.append(c);
                 break;
             case 'H':
                 // TODO toggle help
