@@ -16,7 +16,8 @@ import java.util.Set;
  */
 public class PointGraph implements Iterable<Point> {
     private Map<Point, Map<Direction, Point>> adjacencyMap;
-    private Set<Point> points;
+    private Set<Point> pointsSet;
+    private List<Point> pointsList;
     private int size;
 
     /* CONSTRUCTOR -----------------------------------------------------------*/
@@ -26,7 +27,8 @@ public class PointGraph implements Iterable<Point> {
      */
     public PointGraph() {
         this.adjacencyMap = new HashMap<>();
-        this.points = new HashSet<>();
+        this.pointsSet = new HashSet<>();
+        this.pointsList = new ArrayList<>();
         this.size = 0;
     }
 
@@ -37,8 +39,7 @@ public class PointGraph implements Iterable<Point> {
      * @return list of all pathway points
      */
     public List<Point> listAllPoints() {
-        List<Point> result = new ArrayList<>(points);
-        return result;
+        return pointsList;
     }
 
     /**
@@ -48,7 +49,7 @@ public class PointGraph implements Iterable<Point> {
     public List<Point> listLeafPoints() {
         List<Point> result = new ArrayList<>();
 
-        for (Point p : points) {
+        for (Point p : pointsSet) {
             if (isLeaf(p)) {
                 result.add(p);
             }
@@ -98,7 +99,8 @@ public class PointGraph implements Iterable<Point> {
         }
 
         adjacencyMap.put(p, new HashMap<>());
-        points.add(p);
+        pointsSet.add(p);
+        pointsList.add(p);
 
         size++;
     }
@@ -142,7 +144,8 @@ public class PointGraph implements Iterable<Point> {
         }
 
         adjacencyMap.remove(p);
-        points.remove(p);
+        pointsSet.remove(p);
+        pointsList.remove(p);
 
         size--;
     }
@@ -291,6 +294,6 @@ public class PointGraph implements Iterable<Point> {
      */
     @Override
     public Iterator<Point> iterator() {
-        return points.iterator();
+        return pointsList.iterator();
     }
 }
