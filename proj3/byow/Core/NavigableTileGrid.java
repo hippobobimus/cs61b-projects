@@ -27,8 +27,9 @@ public class NavigableTileGrid extends TileGrid {
      * @param height height
      * @param animate animation/no animation
      */
-    public NavigableTileGrid(int width, int height, String animate) {
-        super(width, height, animate);
+    public NavigableTileGrid(int width, int height) {
+        //super(width, height, animate);
+        super(width, height);
 
         pathway = new PointGraph();
 

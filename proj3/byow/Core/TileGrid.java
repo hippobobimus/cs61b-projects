@@ -11,7 +11,7 @@ import byow.TileEngine.Tileset;
  * @author Rob Masters
  */
 public class TileGrid extends Grid {
-    private boolean animate;
+    //private boolean animate;
     private TERenderer ter;
     private TETile[][] tiles;
 
@@ -24,14 +24,14 @@ public class TileGrid extends Grid {
      * @param height height of the map
      * @param animate animation/no animation
      */
-    public TileGrid(int width, int height, String animate) {
+    public TileGrid(int width, int height) {
         super(width, height);
 
-        this.animate = animate.equals("animate") ? true : false;
+        //this.animate = animate.equals("animate") ? true : false;
 
-        this.ter = new TERenderer();
-        // allow for HUD area above map.
-        ter.initialize(getWidth(), getHeight() + HUD_HEIGHT);
+        //this.ter = new TERenderer();
+        //// allow for HUD area above map.
+        //ter.initialize(getWidth(), getHeight() + HUD_HEIGHT);
 
         tiles = new TETile[width][height];
 
@@ -49,7 +49,7 @@ public class TileGrid extends Grid {
      * Returns a 2D array of tiles corresponding to points in the 2D grid.
      * @return 2D tile array
      */
-    public TETile[][] getTiles() {
+    public TETile[][] getFrame() {
         return tiles;
     }
 
@@ -91,33 +91,33 @@ public class TileGrid extends Grid {
         setTile(p, tile);
     }
 
-    /* ANIMATION -------------------------------------------------------------*/
-
-    /**
-     * Renders the current tile state to screen.
-     */
-    public void render() {
-        TETile[][] t = getTiles();
-        ter.renderFrame(t);
-    }
-
-    /**
-     * If animation has been specified, renders the current tile state to screen
-     * and pauses for 10ms.
-     */
-    public void animate() {
-        if (!animate) {
-            return;
-        }
-
-        render();
-
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+//    /* ANIMATION -------------------------------------------------------------*/
+//
+//    /**
+//     * Renders the current tile state to screen.
+//     */
+//    public void render() {
+//        TETile[][] t = getTiles();
+//        ter.renderFrame(t);
+//    }
+//
+//    /**
+//     * If animation has been specified, renders the current tile state to screen
+//     * and pauses for 10ms.
+//     */
+//    public void animate() {
+//        if (!animate) {
+//            return;
+//        }
+//
+//        render();
+//
+//        try {
+//            Thread.sleep(10);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
 

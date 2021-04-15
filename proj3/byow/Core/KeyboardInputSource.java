@@ -12,7 +12,7 @@ public class KeyboardInputSource implements InputSource {
     private static final InputType type = InputType.KEYBOARD;
 
     public KeyboardInputSource() {
-        StdDraw.setCanvasSize(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX);
+        //StdDraw.setCanvasSize(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX);
     }
 
     /**
@@ -22,16 +22,31 @@ public class KeyboardInputSource implements InputSource {
      */
     @Override
     public char getNextKey() {
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char c = Character.toUpperCase(StdDraw.nextKeyTyped());
-                if (PRINT_TYPED_KEYS) {
-                    System.out.print(c);
-                }
-                return c;
+        if (StdDraw.hasNextKeyTyped()) {
+            char c = Character.toUpperCase(StdDraw.nextKeyTyped());
+            if (PRINT_TYPED_KEYS) {
+                System.out.print(c);
             }
-            StdDraw.pause(100);  // wait 100ms before polling keyboard again.
+            return c;
         }
+        return Character.MIN_VALUE;
+        //while (true) {
+        //    if (StdDraw.hasNextKeyTyped()) {
+        //        char c = Character.toUpperCase(StdDraw.nextKeyTyped());
+        //        if (PRINT_TYPED_KEYS) {
+        //            System.out.print(c);
+        //        }
+        //        return c;
+        //    }
+        //    StdDraw.pause(10);  // wait 100ms before polling keyboard again.
+        //}
+    }
+
+    /**
+     */
+    @Override
+    public boolean hasNextKey() {
+        return StdDraw.hasNextKeyTyped();
     }
 
     /**

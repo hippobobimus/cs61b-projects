@@ -12,6 +12,9 @@ public class Constants {
     // Height of the top HUD bar in tiles.
     public static final int HUD_HEIGHT = 2;
 
+    public static final int HUD_ORIGIN_X = 0;
+    public static final int HUD_ORIGIN_Y = MAP_HEIGHT + 1;
+
     // Dimensions of the window in tiles.
     public static final int WINDOW_WIDTH = MAP_WIDTH;
     public static final int WINDOW_HEIGHT = (MAP_HEIGHT + HUD_HEIGHT);
@@ -26,6 +29,17 @@ public class Constants {
     public static final int MIN_ROOM_HEIGHT = 4;
     public static final int MAX_ROOM_HEIGHT = 10;
 
+    // Center of window.
+    public static final int CENTER_X = WINDOW_WIDTH / 2;
+    public static final int CENTER_Y = WINDOW_HEIGHT / 2;
+
     // Saving
     public static final String SAVE_FILE_PATH = "data.txt";
+
+    // Level building.
+    public static final int ROOM_PLACEMENT_ATTEMPTS = 40;
+    public static final int MAX_MAZE_BUILD_STEPS = -1; // unlimited.
+    public static final double EXTRA_BRIDGE_PROBABILITY = 0.1;
+    public static final int DEAD_END_PRUNING_STEPS = 20;
+
 }

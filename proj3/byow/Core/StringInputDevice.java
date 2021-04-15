@@ -31,6 +31,13 @@ public class StringInputDevice implements InputSource  {
     }
 
     /**
+     */
+    @Override
+    public boolean hasNextKey() {
+        return possibleNextInput();
+    }
+
+    /**
      * Signals whether there is still input characters remaining, or if the 
      * input string has been exhausted.
      * @return true input remaining, false input exhausted

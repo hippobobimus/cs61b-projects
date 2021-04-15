@@ -6,6 +6,7 @@ package byow.Core;
  * and what specific type it is.
  */
 public interface InputSource {
+    public boolean hasNextKey();
     public char getNextKey();
     public boolean possibleNextInput();
     public InputType type();

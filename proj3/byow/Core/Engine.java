@@ -1,8 +1,11 @@
 package byow.Core;
 
+import static byow.Core.Constants.*;
+
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 
+import java.awt.Color;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,23 +14,22 @@ import java.util.List;
 import edu.princeton.cs.introcs.StdDraw;
 
 public class Engine {
-    private World world;
-    private boolean gameInProgress = false;
-    private StringBuilder inputHistory = new StringBuilder();
+    private Game game = new Game();
+    private TERenderer ter = new TERenderer();
+    private InputProcessor inputProcessor = new InputProcessor(this.game);
+    private InputSource input;
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
      * including inputs from the main menu.
      */
     public void interactWithKeyboard() {
-        InputSource inputSource = new KeyboardInputSource();
+        this.input = new KeyboardInputSource();
 
-        StdDraw.text(0.5, 0.6, "New Game (N)");
-        StdDraw.text(0.5, 0.55, "New Game with Animated World Gen. (A)");
-        StdDraw.text(0.5, 0.5, "Load Game (L)");
-        StdDraw.text(0.5, 0.45, "Quit (:Q)");
+        ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
+        StdDraw.setPenColor(255, 255, 255);
 
-        processInput(inputSource);
+        gameLoop();
     }
 
     /**
@@ -52,177 +54,99 @@ public class Engine {
      * @return the 2D TETile[][] representing the state of the world
      */
     public TETile[][] interactWithInputString(String input) {
-        InputSource inputSource = new StringInputDevice(input);
+        this.input = new StringInputDevice(input);
 
-        processInput(inputSource);
+        while (this.input.possibleNextInput()) {
+            processInput();
+        }
 
-        TETile[][] finalWorldFrame = world.tiles();
+        TETile[][] finalWorldFrame = game.getFrame();
         return finalWorldFrame;
     }
 
+    private void gameLoop() {
+        while (input.possibleNextInput()) {
+            processInput();
+            update();
+            render();
+
+            StdDraw.pause(16);
+        }
+    }
+
+    private void processInput() {
+        if (input.hasNextKey()) {
+            char c = input.getNextKey();
+            inputProcessor.process(c);
+        }
+    }
+
+    private void update() {
+        switch(game.getState()) {
+            case LOADING_LEVEL:
+                game.loadLevel();
+                break;
+        }
+    }
+
+    private void render() {
+        StdDraw.clear(Color.BLACK);
+
+        TETile[][] frame;
+
+        switch (game.getState()) {
+            case MAIN_MENU:
+                drawStartMenu();
+                break;
+            case SEED_ENTRY:
+                drawSeedEntryScreen();
+                break;
+            case LOADING_LEVEL:
+                frame = game.getFrame();
+                ter.renderFrame(frame);
+                drawHUD();
+                break;
+            case IN_PLAY:
+                frame = game.getFrame();
+                ter.renderFrame(frame);
+                drawHUD();
+                break;
+            case COMMAND_ENTRY:
+                drawCommandScreen();
+                break;
+            default:
+                break;
+        }
+
+        StdDraw.show();
+    }
+
+    private void drawStartMenu() {
+        StdDraw.text(CENTER_X, CENTER_Y + 2, "New Game (N)");
+        StdDraw.text(CENTER_X, CENTER_Y, "Load Game (L)");
+        StdDraw.text(CENTER_X, CENTER_Y - 2, "Options (:)");
+    }
+
+    private void drawSeedEntryScreen() {
+        StdDraw.text(CENTER_X, CENTER_Y + 1, "Enter a seed value followed by 'S'.");
+    }
+
+    private void drawHUD() {
+        StdDraw.text(HUD_ORIGIN_X + 10, HUD_ORIGIN_Y, "This is the HUD.");
+    }
+
+    private void drawCommandScreen() {
+        String a = game.getAnimationSetting() ? "ON" : "OFF";
+
+        StdDraw.text(CENTER_X, CENTER_Y + 2, "Commands:");
+        StdDraw.text(CENTER_X, CENTER_Y, "Save and quit (Q)");
+        StdDraw.text(CENTER_X, CENTER_Y - 1, "Return to game (R)");
+        StdDraw.text(CENTER_X, CENTER_Y - 3, "Toggle settings:");
+        StdDraw.text(CENTER_X, CENTER_Y - 5,
+                "Animate level generation (A): " + a);
+    }
+
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
-
-    /**
-     * Moves the avatar in the given direction and renders the updated world to
-     * screen.
-     * @param d direction of travel
-     */
-    private void move(Direction d) {
-        world.moveAvatar(d);
-        world.render();
-    }
-
-    /**
-     * Takes an input source, parsing and processing all available input from it.
-     * @param input input source
-     */
-    private void processInput(InputSource input) {
-        while (input.possibleNextInput()) {
-            if (gameInProgress) {
-                processInGameInput(input);
-            } else {
-                processPreGameInput(input);
-            }
-        }
-    }
-
-    /**
-     */
-    private void processPreGameInput(InputSource input) {
-        char c = input.getNextKey();
-        switch(c) {
-            case 'A':
-                newGame(input, "animate");
-                break;
-            case 'L':
-                loadGame();
-                break;
-            case 'N':
-                newGame(input);
-                break;
-            case ':':
-                c = input.getNextKey();
-                processCommand(c);
-                break;
-            default:
-                break;
-        }
-    }
-    /**
-     */
-    private void processInGameInput(InputSource input) {
-        char c = input.getNextKey();
-        switch(c) {
-            case 'W':
-                move(Direction.UP);
-                inputHistory.append(c);
-                break;
-            case 'A':
-                move(Direction.LEFT);
-                inputHistory.append(c);
-                break;
-            case 'S':
-                move(Direction.DOWN);
-                inputHistory.append(c);
-                break;
-            case 'D':
-                move(Direction.RIGHT);
-                inputHistory.append(c);
-                break;
-            case 'H':
-                // TODO toggle help
-                break;
-            case ':':
-                c = input.getNextKey();
-                processCommand(c);
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * Processes any commands entered by the user. Commands are preceded by a
-     * colon (':').
-     *     Current commands:
-     *         'Q' = quit
-     * Does nothing if the given character doesn't correspond to a command.
-     * @param input input source
-     */
-    private void processCommand(char c) {
-        if (c == 'Q') { // do not store this input.
-            quit();
-        }
-    }
-
-    /**
-     * Interrogates the input source for the user entered seed value and then
-     * generates a new world, rendering it to screen. If the string "animate" is
-     * supplied, the world generation will be animated.
-     * @param input input source
-     * @param animated whether to animate the world generation
-     */
-    private void newGame(InputSource input, String animated) {
-        inputHistory.append("N");
-
-        this.gameInProgress = true;
-
-        if (input.type().equals(InputType.KEYBOARD)) {
-            StdDraw.clear();
-            StdDraw.text(0.5, 0.5, "Enter seed value and type 'S' to confirm.");
-        }
-
-        String temp = "";
-
-        char c;
-        while (input.possibleNextInput()) {
-            c = input.getNextKey();
-            inputHistory.append(c);
-
-            if (c == 'S') {
-                break;
-            } else if (Character.isDigit(c)) {
-                temp += c;
-            } else {
-                throw new IllegalArgumentException("The input contains an" +
-                        "invalid seed.");
-            }
-        }
-
-        long seed = Long.parseLong(temp, 10);
-
-        this.world = new World(seed, animated);
-        world.build();
-        world.render();
-    }
-
-    /**
-     * Interrogates the input source for the user entered seed value and then
-     * generates a new world, rendering it to screen. Does not animate the
-     * world generation.
-     * @param input input source
-     */
-    private void newGame(InputSource input) {
-        newGame(input, "");
-    }
-
-    /**
-     * Loads the previous game state.
-     */
-    private void loadGame() {
-        InputSource savedInput = GameData.getInputSource();
-
-        processInput(savedInput);
-    }
-
-    /**
-     * Ends the program and saves the current game state.
-     */
-    private void quit() {
-        String data = inputHistory.toString();
-        GameData.overwriteSaveData(data);
-        System.exit(0);
-    }
 
     /* MAIN METHOD -----------------------------------------------------------*/
 
