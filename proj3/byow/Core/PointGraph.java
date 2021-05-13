@@ -151,7 +151,10 @@ public class PointGraph implements Iterable<Point> {
     }
 
     /**
-     * TODO
+     * Removes the edge connecting the two given points. Throws an exception if
+     * the given points are not contained in the graph.
+     * @param p end point of edge
+     * @param q other end point of edge
      */
     public void removeEdge(Point p, Point q) {
         validatePoint(p);
@@ -160,13 +163,6 @@ public class PointGraph implements Iterable<Point> {
 
         removeEdgeHelper(p, q);
         removeEdgeHelper(q, p);
-    }
-
-    private void removeEdgeHelper(Point from, Point to) {
-        Map<Direction, Point> dirMap = adjacencyMap.get(from);
-
-        Direction d = Direction.from(from, to);
-        dirMap.remove(d, to);
     }
 
     /**
@@ -225,44 +221,6 @@ public class PointGraph implements Iterable<Point> {
         return result;
     }
 
-    /* PRIVATE HELPER METHODS ------------------------------------------------*/
-
-    /**
-     * Adds an edge between two points in the direction from-to.
-     * @param from origin point
-     * @param to terminal point
-     */
-    private void addEdgeHelper(Point from, Point to) {
-        Map<Direction, Point> dirMap = adjacencyMap.get(from);
-
-        Direction d = Direction.from(from, to);
-
-        dirMap.put(d, to);
-    }
-
-    /**
-     * Throws an exception if the point is not contained in the graph.
-     */
-    private void validatePoint(Point p) {
-        if (!contains(p)){
-            throw new IllegalArgumentException(
-                    "The PointGraph does not contain the point: " + p);
-        }
-    }
-
-    /**
-     * Throws an exception if the direction is not cardinal (UP, DOWN, LEFT,
-     * RIGHT).
-     * @param d direction
-     */
-    private void validateDirection(Direction d) {
-        if (!d.isCardinal()){
-            throw new IllegalArgumentException(
-                    "The PointGraph only accepts cardinal directions. Given: " +
-                    d);
-        }
-    }
-
     /* OVERRIDEN METHODS -----------------------------------------------------*/
 
     /**
@@ -295,5 +253,56 @@ public class PointGraph implements Iterable<Point> {
     @Override
     public Iterator<Point> iterator() {
         return pointsList.iterator();
+    }
+
+    /* PRIVATE HELPER METHODS ------------------------------------------------*/
+
+    /**
+     * Adds an edge between two points in the direction from-to.
+     * @param from origin point
+     * @param to terminal point
+     */
+    private void addEdgeHelper(Point from, Point to) {
+        Map<Direction, Point> dirMap = adjacencyMap.get(from);
+
+        Direction d = Direction.from(from, to);
+
+        dirMap.put(d, to);
+    }
+
+    /**
+     * Removed the edge connecting the two given points in the direction from
+     * the first point parameter to the second.
+     * @param from point of origin of edge
+     * @param to point of termination of edge
+     */
+    private void removeEdgeHelper(Point from, Point to) {
+        Map<Direction, Point> dirMap = adjacencyMap.get(from);
+
+        Direction d = Direction.from(from, to);
+        dirMap.remove(d, to);
+    }
+
+    /**
+     * Throws an exception if the point is not contained in the graph.
+     */
+    private void validatePoint(Point p) {
+        if (!contains(p)){
+            throw new IllegalArgumentException(
+                    "The PointGraph does not contain the point: " + p);
+        }
+    }
+
+    /**
+     * Throws an exception if the direction is not cardinal (UP, DOWN, LEFT,
+     * RIGHT).
+     * @param d direction
+     */
+    private void validateDirection(Direction d) {
+        if (!d.isCardinal()){
+            throw new IllegalArgumentException(
+                    "The PointGraph only accepts cardinal directions. Given: " +
+                    d);
+        }
     }
 }

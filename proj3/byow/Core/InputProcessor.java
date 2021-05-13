@@ -14,9 +14,14 @@ public class InputProcessor {
     private StringBuilder history = new StringBuilder();
     private StringBuilder seedBuilder = new StringBuilder();
 
+    private InputSource inputBuffer;
+    private InputSource input;
+
     /* CONSTRUCTOR -----------------------------------------------------------*/
 
     /**
+     * Full constructor.
+     * @param game game object
      */
     public InputProcessor(Game game) {
         this.game = game;
@@ -25,31 +30,68 @@ public class InputProcessor {
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
+     * Sets the input source for this processor.
+     * @param input input source
      */
-    public void process(char c) {
+    public void initialize(InputSource input) {
+        this.input = input;
+    }
+
+    /**
+     * Looks for input first in the buffer and then in the designated
+     * input source, processing one input character (if available).
+     */
+    public void process() {
+        // Don't process input while the level is being built.
+        if (game.getState().equals(GameState.BUILDING_LEVEL)) {
+            return;
+        }
+
+        // Exhaust the input buffer before processing user input.
+        if (inputBuffer != null && inputBuffer.possibleNextInput()) {
+            process(inputBuffer.getNextKey());
+        } else if (input.hasNextKey()) {
+            char c = input.getNextKey();
+            process(c);
+        }
+    }
+
+    /* PRIVATE HELPER METHODS ------------------------------------------------*/
+
+    /**
+     * Dispatches input in different ways depending on the current game state.
+     * @param c input character
+     */
+    private void process(char c) {
         GameState state = game.getState();
 
         switch(state) {
+            case IN_PLAY:
+                processInPlay(c);
+                break;
             case MAIN_MENU:
                 processMainMenu(c);
                 break;
             case SEED_ENTRY:
                 processSeedEntry(c);
                 break;
-            case LOADING_LEVEL:
+            case BUILDING_LEVEL:
+                // IGNORE USER ENTRY
+                break;
+            case LOADING_GAME:
                 // IGNORE USER ENTRY
                 break;
             case COMMAND_ENTRY:
                 processCommand(c);
-                break;
-            case IN_PLAY:
-                processInPlay(c);
                 break;
             default:
                 break;
         }
     }
 
+    /**
+     * Processes input while the game state is IN_PLAY.
+     */
     private void processMainMenu(char c) {
         switch(c) {
             case 'L':
@@ -67,6 +109,9 @@ public class InputProcessor {
         }
     }
 
+    /**
+     * Processes input while the game state is SEED_ENTRY.
+     */
     private void processSeedEntry(char c) {
         switch(c) {
             case 'S':
@@ -80,28 +125,36 @@ public class InputProcessor {
         }
     }
 
+    /**
+     * Takes the stored seed in the form of a StringBuilder and returns it
+     * as a long.
+     * @return seed
+     */
     private long getSeed() {
         String seedStr = this.seedBuilder.toString();
         long seed = Long.parseLong(seedStr, 10);
         return seed;
     }
 
+    /**
+     * Processes input while the game state is IN_PLAY.
+     */
     private void processInPlay(char c) {
         switch(c) {
             case 'W':
-                move(Direction.UP);
+                game.moveAvatar(Direction.UP);
                 history.append(c);
                 break;
             case 'A':
-                move(Direction.LEFT);
+                game.moveAvatar(Direction.LEFT);
                 history.append(c);
                 break;
             case 'S':
-                move(Direction.DOWN);
+                game.moveAvatar(Direction.DOWN);
                 history.append(c);
                 break;
             case 'D':
-                move(Direction.RIGHT);
+                game.moveAvatar(Direction.RIGHT);
                 history.append(c);
                 break;
             case 'H':
@@ -115,21 +168,12 @@ public class InputProcessor {
         }
     }
 
-    /* PRIVATE HELPER METHODS ------------------------------------------------*/
-
     /**
-     * Moves the avatar in the given direction and renders the updated world to
-     * screen.
-     * @param d direction of travel
-     */
-    private void move(Direction d) {
-        game.moveAvatar(d);
-    }
-
-    /**
-     * Processes any commands entered by the user. Commands are preceded by a
-     * colon (':').
+     * Processes any commands entered by the user while the game state is
+     * COMMAND_ENTRY. Commands are preceded by a colon (':').
      *     Current commands:
+     *         'A' = toggle animation of level build
+     *         'R' = return to previous game state
      *         'Q' = quit
      * Does nothing if the given character doesn't correspond to a command.
      * @param input input source
@@ -141,7 +185,8 @@ public class InputProcessor {
                 game.toggleBuildAnimation();
                 break;
             case 'Q':
-                quit();
+                saveGame();
+                game.quit();
                 break;
             case 'R':
                 game.setState(game.getPreviousState());
@@ -155,20 +200,17 @@ public class InputProcessor {
      * Loads the previous game state.
      */
     private void loadGame() {
+        System.out.println("Loading...");
         InputSource savedInput = GameData.getInputSource();
 
-        while (savedInput.possibleNextInput()) {
-            char c = savedInput.getNextKey();
-            process(c);
-        }
+        this.inputBuffer = savedInput;
     }
 
     /**
-     * Ends the program and saves the current game state.
+     * Saves the current game state.
      */
-    private void quit() {
+    private void saveGame() {
         String data = history.toString();
         GameData.overwriteSaveData(data);
-        System.exit(0);
     }
 }

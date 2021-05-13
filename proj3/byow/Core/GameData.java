@@ -8,7 +8,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * A class for handling save file data.
+ * A class for handling save game data. Data can be written out to a file and
+ * read back in at a later time, delivered as an InputSource.
  * @author Rob Masters
  */
 public class GameData {

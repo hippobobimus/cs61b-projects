@@ -28,6 +28,8 @@ public class Tileset {
     private static final String avatarDownImg = imgDir + "chicken_down.png";
     private static final String avatarLeftImg = imgDir + "chicken_left.png";
     private static final String avatarRightImg = imgDir + "chicken_right.png";
+    private static final String objectiveUntakenImg = imgDir + "corn.png";
+    private static final String objectiveTakenImg = imgDir + "corn_eaten.png";
 
     // Avatar.
     public static final TETile AVATAR_DEFAULT = new TETile(
@@ -48,6 +50,12 @@ public class Tileset {
             '·', new Color(128, 192, 128), Color.black, "floor", floorImg);
     public static final TETile GRASS = new TETile(
             '"', Color.green, Color.black, "grass", grassImg);
+
+    // Objective.
+    public static final TETile OBJECTIVE_UNTAKEN = new TETile(
+            '$', Color.yellow, Color.black, "corn", objectiveUntakenImg);
+    public static final TETile OBJECTIVE_TAKEN = new TETile(
+            '%', Color.yellow, Color.black, "corn eaten", objectiveTakenImg);
 
     // Currently unused.
     public static final TETile NOTHING = new TETile(' ', Color.black, Color.black, "nothing");

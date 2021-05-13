@@ -11,10 +11,6 @@ public class KeyboardInputSource implements InputSource {
     private static final boolean PRINT_TYPED_KEYS = true;
     private static final InputType type = InputType.KEYBOARD;
 
-    public KeyboardInputSource() {
-        //StdDraw.setCanvasSize(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX);
-    }
-
     /**
      * Returns the next character entered on the keyboard. Lower case characters
      * are converted to upper case.
@@ -30,19 +26,11 @@ public class KeyboardInputSource implements InputSource {
             return c;
         }
         return Character.MIN_VALUE;
-        //while (true) {
-        //    if (StdDraw.hasNextKeyTyped()) {
-        //        char c = Character.toUpperCase(StdDraw.nextKeyTyped());
-        //        if (PRINT_TYPED_KEYS) {
-        //            System.out.print(c);
-        //        }
-        //        return c;
-        //    }
-        //    StdDraw.pause(10);  // wait 100ms before polling keyboard again.
-        //}
     }
 
     /**
+     * Determines whether there is available input ready to be served.
+     * @return presence of available input
      */
     @Override
     public boolean hasNextKey() {

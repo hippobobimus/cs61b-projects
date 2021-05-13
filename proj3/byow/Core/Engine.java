@@ -15,16 +15,17 @@ import edu.princeton.cs.introcs.StdDraw;
 
 public class Engine {
     private Game game = new Game();
+    private HUD hud = new HUD(game);
     private TERenderer ter = new TERenderer();
     private InputProcessor inputProcessor = new InputProcessor(this.game);
-    private InputSource input;
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
      * including inputs from the main menu.
      */
     public void interactWithKeyboard() {
-        this.input = new KeyboardInputSource();
+        InputSource inputSource = new KeyboardInputSource();
+        inputProcessor.initialize(inputSource);
 
         ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
         StdDraw.setPenColor(255, 255, 255);
@@ -50,66 +51,79 @@ public class Engine {
      * should yield the exact same world state as:
      *   - interactWithInputString("n123sssww")
      *
+     *   Does not render to screen.
+     *
      * @param input the input string to feed to your program
      * @return the 2D TETile[][] representing the state of the world
      */
     public TETile[][] interactWithInputString(String input) {
-        this.input = new StringInputDevice(input);
+        InputSource inputSource = new StringInputSource(input);
+        inputProcessor.initialize(inputSource);
 
-        while (this.input.possibleNextInput()) {
-            processInput();
+        while (inputSource.possibleNextInput()) {
+            inputProcessor.process();
+            game.update();
         }
 
         TETile[][] finalWorldFrame = game.getFrame();
         return finalWorldFrame;
     }
 
-    private void gameLoop() {
-        while (input.possibleNextInput()) {
-            processInput();
-            update();
-            render();
+    /* PRIVATE HELPER METHODS ------------------------------------------------*/
 
+    /**
+     * Main game loop. On each cycle it first processes any available input,
+     * then updates the game before rendering it to screen. The loop continues
+     * indefinitely so exiting the game must be handled by a sub-process.
+     */
+    private void gameLoop() {
+        while (true) {
+            inputProcessor.process();
+            game.update();
+            render();
             StdDraw.pause(16);
         }
     }
 
-    private void processInput() {
-        if (input.hasNextKey()) {
-            char c = input.getNextKey();
-            inputProcessor.process(c);
-        }
-    }
+    /* -----------------------------------------------------------------------*/
 
-    private void update() {
-        switch(game.getState()) {
-            case LOADING_LEVEL:
-                game.loadLevel();
-                break;
-        }
-    }
+//    /**
+//     */
+//    private void update() {
+//        switch(game.getState()) {
+//            case BUILDING_LEVEL:
+//                game.buildLevel();
+//                break;
+//            case IN_PLAY:
+//                game.update();
+//                hud.update();
+//                break;
+//        }
+//    }
 
+    /**
+     */
     private void render() {
         StdDraw.clear(Color.BLACK);
 
         TETile[][] frame;
 
         switch (game.getState()) {
+            case IN_PLAY:
+                frame = game.getFrame();
+                ter.renderFrame(frame);
+                hud.render();
+                break;
+            case BUILDING_LEVEL:
+                frame = game.getFrame();
+                ter.renderFrame(frame);
+                hud.render();
+                break;
             case MAIN_MENU:
                 drawStartMenu();
                 break;
             case SEED_ENTRY:
                 drawSeedEntryScreen();
-                break;
-            case LOADING_LEVEL:
-                frame = game.getFrame();
-                ter.renderFrame(frame);
-                drawHUD();
-                break;
-            case IN_PLAY:
-                frame = game.getFrame();
-                ter.renderFrame(frame);
-                drawHUD();
                 break;
             case COMMAND_ENTRY:
                 drawCommandScreen();
@@ -121,6 +135,8 @@ public class Engine {
         StdDraw.show();
     }
 
+    /* -----------------------------------------------------------------------*/
+
     private void drawStartMenu() {
         StdDraw.text(CENTER_X, CENTER_Y + 2, "New Game (N)");
         StdDraw.text(CENTER_X, CENTER_Y, "Load Game (L)");
@@ -131,22 +147,16 @@ public class Engine {
         StdDraw.text(CENTER_X, CENTER_Y + 1, "Enter a seed value followed by 'S'.");
     }
 
-    private void drawHUD() {
-        StdDraw.text(HUD_ORIGIN_X + 10, HUD_ORIGIN_Y, "This is the HUD.");
-    }
-
     private void drawCommandScreen() {
         String a = game.getAnimationSetting() ? "ON" : "OFF";
 
         StdDraw.text(CENTER_X, CENTER_Y + 2, "Commands:");
-        StdDraw.text(CENTER_X, CENTER_Y, "Save and quit (Q)");
-        StdDraw.text(CENTER_X, CENTER_Y - 1, "Return to game (R)");
-        StdDraw.text(CENTER_X, CENTER_Y - 3, "Toggle settings:");
+        StdDraw.text(CENTER_X, CENTER_Y, "Save and Quit (Q)");
+        StdDraw.text(CENTER_X, CENTER_Y - 1, "Return to Game (R)");
+        StdDraw.text(CENTER_X, CENTER_Y - 3, "Toggle Settings:");
         StdDraw.text(CENTER_X, CENTER_Y - 5,
-                "Animate level generation (A): " + a);
+                "Animate Level Generation (A): " + a);
     }
-
-    /* PRIVATE HELPER METHODS ------------------------------------------------*/
 
     /* MAIN METHOD -----------------------------------------------------------*/
 

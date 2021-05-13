@@ -25,10 +25,8 @@ public class NavigableTileGrid extends TileGrid {
      * navigable area.
      * @param width width
      * @param height height
-     * @param animate animation/no animation
      */
     public NavigableTileGrid(int width, int height) {
-        //super(width, height, animate);
         super(width, height);
 
         pathway = new PointGraph();
@@ -40,7 +38,44 @@ public class NavigableTileGrid extends TileGrid {
         }
     }
 
+    /**
+     * Constructor that defaults to the width and height set in the constants
+     * class.
+     */
+    public NavigableTileGrid() {
+        this(MAP_WIDTH, MAP_HEIGHT);
+    }
+
     /* PUBLIC METHODS --------------------------------------------------------*/
+
+    /**
+     * Configures the tile at the given point and any in its local neighbourhood
+     * as appropriate. If the given point is on the pathway it becomes a floor
+     * tile and any neighbouring tiles not on the pathway become wall tiles.
+     * If it is not on the pathway then it and all its neighbours are set to
+     * either wall or grass depending on whether the tile in question has any
+     * neighbours on the pathway.
+     * @param p point
+     */
+    public void setTileNeighbourhood(Point p) {
+        if (pathway.contains(p)) {
+            setTile(p, Tileset.FLOOR);
+
+            for (Point nbr : listNeighbours(p)) {
+                if (!pathway.contains(nbr)) {
+                    setTile(nbr, Tileset.WALL);
+                }
+            }
+        } else {
+            closeTile(p);
+
+            for (Point nbr : listNeighbours(p)) {
+                if (!pathway.contains(nbr)) {
+                    closeTile(nbr);
+                }
+            }
+        }
+    }
 
     /**
      * Adds the given point to the pathway and configures tiles accordingly.
@@ -157,35 +192,6 @@ public class NavigableTileGrid extends TileGrid {
                 pathway.addEdge(p, nbr);
 
                 regions.connect(p, nbr);
-            }
-        }
-    }
-
-    /**
-     * Configures the tile at the given point and any in its local neighbourhood
-     * as appropriate. If the given point is on the pathway it becomes a floor
-     * tile and any neighbouring tiles not on the pathway become wall tiles.
-     * If it is not on the pathway then it and all its neighbours are set to
-     * either wall or grass depending on whether the tile in question has any
-     * neighbours on the pathway.
-     * @param p point
-     */
-    public void setTileNeighbourhood(Point p) {
-        if (pathway.contains(p)) {
-            setTile(p, Tileset.FLOOR);
-
-            for (Point nbr : listNeighbours(p)) {
-                if (!pathway.contains(nbr)) {
-                    setTile(nbr, Tileset.WALL);
-                }
-            }
-        } else {
-            closeTile(p);
-
-            for (Point nbr : listNeighbours(p)) {
-                if (!pathway.contains(nbr)) {
-                    closeTile(nbr);
-                }
             }
         }
     }

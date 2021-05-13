@@ -26,64 +26,63 @@ public class RoomBuilder {
     public RoomBuilder(NavigableTileGrid ntg, Random random) {
         this.ntg = ntg;
         this.random = random;
+        this.attempt = 0;
     }
 
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
+     * Progresses the build process of a new randomly generated series of rooms
+     * within the navigable tile grid by a single step. Here a single step is
+     * one attempt to build a room. The process itself is limited by the maximum
+     * number of attempts set in the Constants class.
+     * @return whether the build has reached max attempts
      */
-    public void initialize() {
-        this.attempt = 0;
-    }
-
-    /**
-     * Makes the given number of attempts to place a new randomly generated room
-     * into the grid. If the points where the room's floor will be contain any
-     * pathway then the attempt will fail. The attempt will also fail if the
-     * proposed room position is outside the grid boundary.
-     * @param attempts room placement attempts
-     */
-    public void build(int attempts) {
-        for (int i = 0; i < attempts; i++) {
-            build();
-            //animate();
+    public boolean build() {
+        if (!isComplete()) {
+            buildRoom();
         }
-    }
 
-    /**
-     */
-    public boolean animatedBuild() {
-        if(this.attempt < ROOM_PLACEMENT_ATTEMPTS) {
-            build();
-            attempt++;
-            return false;
-        }
-        return true;
+        return isComplete();
     }
 
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
 
     /**
-     * Builds a room with random dimensions and position within the grid.
-     * Returns 0 if the room placement was successful, -1 otherwise.
+     * Determines whether the build process has progressed to its limit.
+     * @return whether build is complete
+     */
+    private boolean isComplete() {
+        return this.attempt >= ROOM_PLACEMENT_ATTEMPTS;
+    }
+
+    /**
+     * Builds a room with random dimensions and position within the grid,
+     * referencing limits set in the Constants class.
      * @return success or fail
      */
-    private int build() {
+    private int buildRoom() {
         // Random room dimensions and position.
         int w = random.nextInt(MAX_ROOM_WIDTH - MIN_ROOM_WIDTH + 1) + MIN_ROOM_WIDTH;
         int h = random.nextInt(MAX_ROOM_HEIGHT - MIN_ROOM_HEIGHT + 1) + MIN_ROOM_HEIGHT;
         int x = random.nextInt(ntg.getWidth() - w);
         int y = random.nextInt(ntg.getHeight() - h);
 
-        return build(w, h, x, y);
+        return buildRoom(w, h, x, y);
     }
 
     /**
-     * Builds a room with the given grid position and dimensions.
+     * Full method for building a room with the given grid position and
+     * dimensions.
      * Returns 0 if the room placement was successful, -1 otherwise.
+     * If the points where the room's floor will be contain any pathway then the
+     * attempt will fail. The attempt will also fail if the proposed room
+     * position is outside the grid boundary.
      * @return success or fail
      */
-    private int build(int w, int h, int x, int y) {
+    private int buildRoom(int w, int h, int x, int y) {
+        attempt++; // increment attempts tracker
+
         Point origin = ntg.get(x, y);
 
         // check placement is viable.
@@ -145,15 +144,17 @@ public class RoomBuilder {
         NavigableTileGrid grid = new NavigableTileGrid(
                 WINDOW_WIDTH, WINDOW_HEIGHT);
 
+        TERenderer ter = new TERenderer();
+        ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
         Random rand = new Random(2873123);
 
         RoomBuilder rb = new RoomBuilder(grid, rand);
 
-        rb.build(40);
-
-        TERenderer ter = new TERenderer();
-        ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        ter.renderFrame(grid.getFrame());
+        boolean done = false;
+        while (!done) {
+            done = rb.build();
+            ter.renderFrame(grid.getFrame()); // animated build.
+        }
     }
 }
-

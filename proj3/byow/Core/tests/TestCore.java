@@ -8,11 +8,22 @@ public class TestCore {
     public static void main(String[] args) {
 
         Class<?>[] testClasses = new Class<?>[] {
-            TestEdge.class,
+            TestBridgeBuilder.class,
             TestDedupPQ.class,
             TestDirection.class,
+            TestEdge.class,
+            TestEngine.class,
+            TestGameData.class,
+            TestGameEntity.class,
+            TestGame.class,
+            TestGrid.class,
+            TestInputProcessor.class,
             TestMazeBuilder.class,
+            TestNavigableTileGrid.class,
+            TestPointGraph.class,
             TestPoint.class,
+            TestStringInputSource.class,
+            TestTileGrid.class,
             TestUnionFind.class
         };
 

@@ -1,75 +1,204 @@
 package byow.Core;
 
+import static byow.Core.Constants.*;
 import byow.TileEngine.TETile;
 
-// TODO Merge Game and World classes.
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
 /**
+ * A class that incorporates level contruction, objective placement and
+ * collection, score tracking and user avatar movement.
  * @author Rob Masters
  */
 public class Game {
-    private World world;
     private GameState state;
     private GameState prevState;
     private boolean buildAnimation;
+    private int score;
+    private Random random;
+    private NavigableTileGrid ntg;
+    private LevelBuilder levelBuilder;
+    private Avatar avatar;
+    private Map<Point, Objective> objectives;
+    private HUD hud;
 
     /* CONSTRUCTOR -----------------------------------------------------------*/
 
+    /**
+     * Full constructor.
+     * Initial game state defaults to MAIN_MENU. Score reset to 0.
+     */
     public Game() {
-        this.world = new World();
         this.state = GameState.MAIN_MENU;
         this.prevState = GameState.MAIN_MENU;
-        this.buildAnimation = false;
+        this.buildAnimation = BUILD_ANIMATION_DEFAULT;
+        this.score = 0;
     }
 
     /* PUBLIC METHODS --------------------------------------------------------*/
 
+    /* INITIALISATION --------------------------------------------------------*/
+
     /**
-     * Builds a level a begins gameplay. The given seed value is the basis for
-     * the random level generation.
-     * @param seed seed for pseudo-random number generation
+     * Begins loading a level with an avatar and objectives. The given
+     * seed affects random elements of the build process.
+     * @param seed pseudo-random number generator seed
      */
     public void initialize(long seed) {
-        //setState(GameState.IN_PLAY);
+        this.random = new Random(seed);
+        this.ntg = new NavigableTileGrid();
+        this.levelBuilder = new LevelBuilder(ntg, random);
+        this.avatar = new Avatar(ntg, random);
+        this.objectives = new HashMap<>();
+        this.hud = new HUD(this);
 
-        this.world.initialize(seed, this.buildAnimation);
-
-        setState(GameState.LOADING_LEVEL);
-        //this.world.build();
+        setState(GameState.BUILDING_LEVEL);
     }
 
-    public void loadLevel() {
-        boolean complete = advanceLoadLevel();
+    /* LEVEL BUILDING --------------------------------------------------------*/
+
+    /**
+     * Progresses level build process. If build animation has been specified then
+     * it progresses by a single step, otherwise it continues to completion.
+     * @return whether load is complete
+     */
+    public boolean buildLevel() {
+        boolean complete = false;
+
+        // if animating build, progress by a single step else progress to
+        // completion.
+        if (buildAnimation) {
+            complete = levelBuilder.build();
+        } else {
+            while (!complete) {
+                complete = levelBuilder.build();
+            }
+        }
 
         if (complete) {
+            positionAvatarAndObjectives();
             setState(GameState.IN_PLAY);
         }
+
+        return complete;
     }
 
     /**
+     * Randomly positions a number of objectives (set in the Constants class),
+     * then randomly positions the user avatar on the pathway (but not on an
+     * objective).
      */
-    private boolean advanceLoadLevel() {
-        if (this.buildAnimation) {
-            return this.world.animatedBuild();
-        } else {
-            return this.world.build();
+    private void positionAvatarAndObjectives() {
+        for (int i = 0; i < INITIAL_OBJECTIVES; i++) {
+            Objective obj = new Objective(ntg, random);
+            obj.move();
+            objectives.put(obj.getPosition(), obj);
+        }
+
+        avatar.move(); // move to random start point.
+
+        // ensure avatar does not start on an objective.
+        while (objectives.containsKey(avatar.getPosition())) {
+            avatar.move(); 
         }
     }
+
+    /* AVATAR WRAPPER --------------------------------------------------------*/
 
     /**
      * Moves the user avatar one step in the given direction, if possible.
      * @param d direction of travel
      */
     public void moveAvatar(Direction d) {
-        world.moveAvatar(d);
+        avatar.move(d);
+    }
+
+    /* UPDATING --------------------------------------------------------------*/
+
+    /**
+     * Updates the game. Either progresses the level build process if it is not
+     * complete, or updates the hud and objectives if the game is in play.
+     */
+    public void update() {
+        switch(getState()) {
+            case BUILDING_LEVEL:
+                buildLevel();
+                break;
+            case IN_PLAY:
+                updateObjectives();
+                hud.update();
+                break;
+        }
     }
 
     /**
-     * Returns the current 2D tile array representing the world state.
+     * Updates the objectives. Any that share a position with the user avatar
+     * are 'taken' and the score is incremented.
+     */
+    public void updateObjectives() {
+        Objective obj = objectives.get(avatar.getPosition());
+
+        if (obj != null && !obj.isTaken()) {
+            obj.take();
+            score += 1;
+        }
+    }
+
+    /**
+     * Exits the program.
+     */
+    public void quit() {
+        System.exit(0);
+    }
+
+    /* SCORING ---------------------------------------------------------------*/
+
+    /**
+     * The score.
+     * @return the current score
+     */
+    public int getScore() {
+        return score;
+    }
+
+    /* TILE FRAME ------------------------------------------------------------*/
+
+    /**
+     * Returns the current 2D tile array representing the current level state.
      * @return frame of tiles
      */
     public TETile[][] getFrame() {
-        return world.getFrame();
+        TETile[][] frame = new TETile[MAP_WIDTH][MAP_HEIGHT];
+
+        // background
+        TETile[][] background = ntg.getFrame();
+
+        for (int i = 0; i < frame.length; i++) {
+            for (int j = 0; j < frame[i].length; j++) {
+                frame[i][j] = background[i][j];
+            }
+        }
+
+        // Objectives
+        for (Objective obj : objectives.values()) {
+            Point objPos = obj.getPosition();
+
+            frame[objPos.getX()][objPos.getY()] = obj.getTile();
+        }
+
+        // Avatar
+        Point p = avatar.getPosition();
+
+        if (p != null) {
+            frame[p.getX()][p.getY()] = avatar.getTile();
+        }
+
+        return frame;
     }
+
+    /* GAME STATE ------------------------------------------------------------*/
 
     /**
      * Returns the current game state.
@@ -95,6 +224,8 @@ public class Game {
         this.prevState = this.state;
         this.state = s;
     }
+
+    /* ANIMATION SETTINGS ----------------------------------------------------*/
 
     /**
      * Enables animation during the level build process.

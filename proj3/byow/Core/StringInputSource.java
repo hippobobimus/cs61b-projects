@@ -3,7 +3,7 @@ package byow.Core;
 /**
  * An input device formed from a String.
  */
-public class StringInputDevice implements InputSource  {
+public class StringInputSource implements InputSource  {
     private String input;
     private int index;
     private static final InputType type = InputType.STRING;
@@ -13,7 +13,7 @@ public class StringInputDevice implements InputSource  {
      * the input device renders.
      * @param s input string
      */
-    public StringInputDevice(String s) {
+    public StringInputSource(String s) {
         index = 0;
         input = s;
     }

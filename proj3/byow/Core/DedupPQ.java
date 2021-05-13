@@ -18,12 +18,10 @@ public class DedupPQ<T> extends PriorityQueue<T> {
         items = new HashSet<>();
     }
 
+    // Super class' add method calls its version of offer, so be careful here.
     @Override
     public boolean add(T item) {
-        if (items.contains(item)) {
-            return false;
-        }
-        return super.add(item);
+        return offer(item);
     }
 
     @Override
@@ -37,7 +35,10 @@ public class DedupPQ<T> extends PriorityQueue<T> {
         if (items.contains(item)) {
             return false;
         }
-        return super.offer(item);
+        items.add(item);
+        boolean result = super.offer(item);
+
+        return result;
     }
 
     @Override

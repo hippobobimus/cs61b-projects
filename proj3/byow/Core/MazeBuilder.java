@@ -22,8 +22,9 @@ public class MazeBuilder {
     private Random random;
     private Map<Point, Edge> edgeTo;
     private DedupPQ<Point> fringe;
-    private int maxIterations;
+    private Point start = null;
     private int iterations;
+    private int reductionIterations;
 
     /* CONSTRUCTORS ----------------------------------------------------------*/
 
@@ -39,47 +40,73 @@ public class MazeBuilder {
 
         // Compare Points in PQ by their priority field.
         Comparator<Point> cmp = (a, b) -> b.getPriority() - a.getPriority();
-        fringe = new DedupPQ<>(cmp);
+        this.fringe = new DedupPQ<>(cmp);
 
-        edgeTo = new HashMap<>();
+        this.edgeTo = new HashMap<>();
+
+        this.iterations = 0;
+        this.reductionIterations = 0;
     }
 
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
-     * Fills all the available space in the grid area with maze(s). Each maze
-     * generation stops after the given number of maximum iterations. If a
-     * negative value is given this is interpreted as no iteration limit.
-     * @param maxIterations maximum iterations
+     * Incrementally fills all the available space in the grid area with
+     * maze(s). This function advances the process by a single step, which
+     * corresponds to a single point being added to the pathway. The iteration
+     * limit can be set in the Constants class in order to end the process
+     * early.
+     * @return whether the build is complete
      */
-    public void build(int maxIterations) {
-        this.maxIterations = maxIterations;
-
-        for (Point start = findStart(); start != null; start = findStart()) {
-            buildMaze(start);
+    public boolean build() {
+        if (reachedIterationLimit()) {
+            return true;
         }
+
+        // get a new start point?
+        if (start == null || fringe.isEmpty()) {
+            start = findStart();
+
+            if (start == null) {
+                return true; // no more valid starts => complete
+            } else {
+                fringe.add(start);
+            }
+        }
+
+        // step.
+        boolean stepDone = false;
+
+        Point p = fringe.remove();
+
+        if (canProcess(p)) {
+            stepDone = process(p); // step done when path expanded.
+        } else {
+            edgeTo.remove(p);
+        }
+
+        if (!stepDone) {
+            build();
+        }
+
+        return false;
     }
 
     /**
-     * Maze fill method with unlimited iterations during maze generation.
-     */
-    public void build() {
-        build(-1);
-    }
-
-    /**
-     * Retracts all dead ends in the pathway by up to the given number of steps
-     * where possible (less if the dead end cannot be retracted further). The
+     * Retracts all dead ends in the pathway by a further step. The total number
+     * of steps is limited and this limit is set in the Constants class. The
      * greater the steps, the more sparse the maze becomes.
-     * @param steps retraction steps
+     * @return whether the retraction step limit has been reached
      */
-    public void reduceDeadEnds(int steps) {
-        List<Point> deadEnds;
+    public boolean reduceDeadEnds() {
+        List<Point> deadEnds = ntg.pathway.listLeafPoints();
 
-        for (int i = 0; i < steps; i++) {
-            deadEnds = ntg.pathway.listLeafPoints();
+        if (reductionIterations < DEAD_END_PRUNING_STEPS) {
             reduceDeadEnds(deadEnds);
+            reductionIterations++;
+            return false;
         }
+        return true;
     }
 
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
@@ -126,35 +153,20 @@ public class MazeBuilder {
     }
 
     /**
-     * Builds a maze starting from the given point, filling the available
-     * reachable area until either no more area remains or the iteration limit
-     * is reached.
-     * @param start start point
-     */
-    private void buildMaze(Point start) {
-        fringe.add(start);
-
-        for (iterations = 0; !reachedIterationLimit() && !fringe.isEmpty();
-                iterations++) {
-            Point p = fringe.remove();
-
-            if (canProcess(p)) {
-                process(p);
-                //animate();
-            } else {
-                edgeTo.remove(p);
-            }
-        }
-    }
-
-    /**
      * Extends the maze with the given point if it is suitable and then adds any
      * available routes onward in cardinal directions from this point to the
      * fringe.
      * @param p point
+     * @return whether the point was added to the path
      */
-    private void process(Point p) {
+    private boolean process(Point p) {
+        boolean success = false;
+
         ntg.openPath(p);
+
+        if (ntg.isPath(p)) {
+            success = true;
+        }
 
         // add cardinal neighbours not on the pathway to the fringe and
         // corresponding edges to edgeTo.
@@ -165,6 +177,10 @@ public class MazeBuilder {
                 edgeTo.put(nbr, new Edge(p, nbr));
             }
         }
+
+        iterations++;
+
+        return success;
     }
 
     /**
@@ -207,7 +223,7 @@ public class MazeBuilder {
      * @return whether iteration limit has been reached
      */
     private boolean reachedIterationLimit() {
-        if (maxIterations < 0 || iterations < maxIterations) {
+        if (MAZE_ITERATION_LIMIT < 0 || iterations < MAZE_ITERATION_LIMIT) {
             return false;
         }
         return true;
@@ -234,7 +250,6 @@ public class MazeBuilder {
         ntg.closePath(p);
         ntg.setTileNeighbourhood(p);
         edgeTo.remove(p);
-        //animate();
     }
 
     /* MAIN METHOD -----------------------------------------------------------*/
@@ -247,14 +262,17 @@ public class MazeBuilder {
         NavigableTileGrid grid = new NavigableTileGrid(
                 WINDOW_WIDTH, WINDOW_HEIGHT);
 
+        TERenderer ter = new TERenderer();
+        ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
         Random rand = new Random(2873123);
 
         MazeBuilder mb = new MazeBuilder(grid, rand);
 
-        mb.build(-1);
-
-        TERenderer ter = new TERenderer();
-        ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        ter.renderFrame(grid.getFrame());
+        boolean done = false;
+        while (!done) {
+            done = mb.build();
+            ter.renderFrame(grid.getFrame()); // animated build.
+        }
     }
 }

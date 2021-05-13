@@ -18,9 +18,10 @@ public class LevelBuilder {
     private RoomBuilder roomBuilder;
     private MazeBuilder mazeBuilder;
     private BridgeBuilder bridgeBuilder;
-    private boolean roomBuildComplete;
-    private boolean mazeBuildComplete;
-    private boolean bridgeBuildComplete;
+    private boolean roomsComplete;
+    private boolean mazeComplete;
+    private boolean bridgesComplete;
+    private boolean pruningComplete;
 
     /* CONSTRUCTOR -----------------------------------------------------------*/
 
@@ -39,32 +40,43 @@ public class LevelBuilder {
         this.mazeBuilder = new MazeBuilder(ntg, random);
         this.bridgeBuilder = new BridgeBuilder(ntg, random);
 
-        this.roomBuildComplete = false;
+        this.roomsComplete = false;
+        this.mazeComplete = false;
+        this.bridgesComplete = false;
+        this.pruningComplete = false;
     }
 
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
-     * Randomly generates a new level within the navigable tile grid. The build
-     * process can be altered by setting values within the Constants class.
+     * Progresses the build process of a new randomly generated level within the
+     * navigable tile grid by a single step.
+     * The process itself depends on parameters set in the Constants class.
+     * @return whether the level build is complete
      */
-    public void build() {
-        roomBuilder.build(ROOM_PLACEMENT_ATTEMPTS);
-        mazeBuilder.build(MAX_MAZE_BUILD_STEPS);
-        bridgeBuilder.build(EXTRA_BRIDGE_PROBABILITY);
-        mazeBuilder.reduceDeadEnds(DEAD_END_PRUNING_STEPS);
+    public boolean build() {
+        if (!roomsComplete) {
+            roomsComplete = roomBuilder.build();
+        } else if (!mazeComplete) {
+            mazeComplete = mazeBuilder.build();
+        } else if (!bridgesComplete) {
+            bridgesComplete = bridgeBuilder.build();
+        } else if (!pruningComplete) {
+            pruningComplete = mazeBuilder.reduceDeadEnds();
+        }
+
+        return isComplete();
     }
 
-    public boolean animatedBuild() {
-        if (!roomBuildComplete) {
-            this.roomBuildComplete = roomBuilder.animatedBuild();
-            return false;
-        } else {
-            mazeBuilder.build(MAX_MAZE_BUILD_STEPS);
-            bridgeBuilder.build(EXTRA_BRIDGE_PROBABILITY);
-            mazeBuilder.reduceDeadEnds(DEAD_END_PRUNING_STEPS);
-        }
-        return true;
+    /* PRIVATE HELPER METHODS ------------------------------------------------*/
+
+    /**
+     * Determines whether the level build process is fully complete.
+     * @return whether the level build is finished
+     */
+    private boolean isComplete() {
+        return roomsComplete && mazeComplete && bridgesComplete
+            && pruningComplete;
     }
 
     /* MAIN METHOD -----------------------------------------------------------*/
@@ -76,14 +88,17 @@ public class LevelBuilder {
         NavigableTileGrid grid = new NavigableTileGrid(
                 WINDOW_WIDTH, WINDOW_HEIGHT);
 
+        TERenderer ter = new TERenderer();
+        ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
         Random rand = new Random(2873123);
 
         LevelBuilder lb = new LevelBuilder(grid, rand);
 
-        lb.build();
-
-        TERenderer ter = new TERenderer();
-        ter.initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        ter.renderFrame(grid.getFrame());
+        boolean done = false;
+        while (!done) {
+            done = lb.build();
+            ter.renderFrame(grid.getFrame()); // animated build
+        }
     }
 }

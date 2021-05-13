@@ -11,7 +11,7 @@ public class Constants {
 
     // Height of the top HUD bar in tiles.
     public static final int HUD_HEIGHT = 2;
-
+    // Origin of text in the HUD, in tile units.
     public static final int HUD_ORIGIN_X = 0;
     public static final int HUD_ORIGIN_Y = MAP_HEIGHT + 1;
 
@@ -38,8 +38,12 @@ public class Constants {
 
     // Level building.
     public static final int ROOM_PLACEMENT_ATTEMPTS = 40;
-    public static final int MAX_MAZE_BUILD_STEPS = -1; // unlimited.
+    public static final int MAZE_ITERATION_LIMIT = -1; // negative = no limit.
     public static final double EXTRA_BRIDGE_PROBABILITY = 0.1;
     public static final int DEAD_END_PRUNING_STEPS = 20;
+    public static final int INITIAL_OBJECTIVES = 10;
+
+    // Settings defaults
+    public static final boolean BUILD_ANIMATION_DEFAULT = true;
 
 }

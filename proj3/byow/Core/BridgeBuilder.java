@@ -3,7 +3,10 @@ package byow.Core;
 import static byow.Core.Constants.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -15,6 +18,7 @@ import java.util.stream.Collectors;
 public class BridgeBuilder {
     private NavigableTileGrid ntg;
     private Random random;
+    private List<Point> candidates;
 
     /* CONSTRUCTORS ----------------------------------------------------------*/
 
@@ -32,35 +36,52 @@ public class BridgeBuilder {
     /* PUBLIC METHODS --------------------------------------------------------*/
 
     /**
-     * Iterates through all viable bridge points between unconnected regions,
-     * connecting all regions into one unified region. Additional connections
-     * are opened between already connected regions with the given probability.
-     * Throws an exception if the probability given is not between 0 and 1.
-     * @param probability probability of additional connections
+     * Incrementally iterates through all viable bridge points between
+     * unconnected regions, connecting all regions into one unified region.
+     * Additional connections are opened between already connected regions with
+     * the probability set in the Constants class.
      */
-    public void build(double probability) {
-        if (probability < 0 || probability > 1) {
-            throw new IllegalArgumentException(
-                    "The probability must be between 0 and 1. Given: " +
-                    probability);
+    public boolean build() {
+        if (candidates == null) {
+            candidates = listAllBridges();
+            shuffle(candidates);
         }
 
-        List<Point> bridges = listAllBridges();
-
-        for (Point bridge : bridges) {
-            double r = random.nextDouble();
-
-            if (isBridge(bridge) || r < probability) {
-                ntg.openPath(bridge);
-                //animate();
-            }
+        if (candidates.isEmpty()) {
+            return true;
         }
+
+        Point candidate = candidates.remove(0);
+
+        double r = random.nextDouble();
+
+        if (isBridge(candidate) || r < EXTRA_BRIDGE_PROBABILITY) {
+            ntg.openPath(candidate);
+            return false;
+        } else {
+            build();
+        }
+        return false;
     }
 
     /* PRIVATE HELPER METHODS ------------------------------------------------*/
 
     /**
-     * Scans all points in the world and returns a list of all bridging points.
+     * Shuffles a given list using the Fisher-Yates/Durstenfeld algorithm.
+     * @param list list to be shuffled in place
+     */
+    private void shuffle(List<Point> list) {
+        for (int i = list.size() - 1; i > 1; i--) {
+            int r = random.nextInt(i + 1);
+            Point p = list.get(r);
+            list.set(r, list.get(i));
+            list.set(i, p);
+        }
+    }
+
+    /**
+     * Scans all points in the world and returns a list of all potential
+     * bridging points.
      * @return bridge points
      */
     private List<Point> listAllBridges() {

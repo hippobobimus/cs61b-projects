@@ -3,7 +3,8 @@ package byow.Core;
 public enum GameState {
     MAIN_MENU,
     SEED_ENTRY,
-    LOADING_LEVEL,
+    BUILDING_LEVEL,
+    LOADING_GAME,
     IN_PLAY,
     COMMAND_ENTRY
 }

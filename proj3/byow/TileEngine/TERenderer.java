@@ -1,9 +1,14 @@
 package byow.TileEngine;
 
+//import byow.Core.Objective;
+import byow.Core.GameEntity;
+import byow.Core.Point;
+
 import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.util.List;
 
 /**
  * Utility class for rendering tiles. You do not need to modify this file. You're welcome
@@ -33,7 +38,8 @@ public class TERenderer {
         this.xOffset = xOff;
         this.yOffset = yOff;
         StdDraw.setCanvasSize(width * TILE_SIZE, height * TILE_SIZE);
-        Font font = new Font("Monaco", Font.BOLD, TILE_SIZE - 2);
+        //Font font = new Font("Monaco", Font.BOLD, TILE_SIZE - 2);
+        Font font = new Font("Monaco", Font.PLAIN, TILE_SIZE - 2);
         StdDraw.setFont(font);      
         StdDraw.setXscale(0, width);
         StdDraw.setYscale(0, height);
@@ -98,4 +104,41 @@ public class TERenderer {
         }
         StdDraw.show();
     }
+
+    public void drawBackground(TETile[][] background) {
+        int numXTiles = background.length;
+        int numYTiles = background[0].length;
+        StdDraw.clear(new Color(0, 0, 0));
+        for (int x = 0; x < numXTiles; x += 1) {
+            for (int y = 0; y < numYTiles; y += 1) {
+                if (background[x][y] == null) {
+                    throw new IllegalArgumentException(
+                        "Tile at position x=" + x + ", y=" + y + " is null.");
+                }
+                background[x][y].draw(x + xOffset, y + yOffset);
+            }
+        }
+    }
+
+    public void drawEntity(GameEntity e) {
+        Point pos = e.getPosition();
+        int x = pos.getX();
+        int y = pos.getY();
+
+        TETile tile = e.getTile();
+
+        tile.draw(x + xOffset, y + yOffset);
+    }
+
+//    public void drawObjectives(List<Objective> objectives) {
+//        for (Objective obj : objectives) {
+//            Point pos = obj.getPosition();
+//            int x = pos.getX();
+//            int y = pos.getY();
+//
+//            TETile tile = obj.getTile();
+//
+//            tile.draw(x + xOffset, y + yOffset);
+//        }
+//    }
 }
