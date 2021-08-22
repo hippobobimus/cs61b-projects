@@ -18,7 +18,7 @@ public class GameData {
      * @return save file as input source
      */
     public static InputSource getInputSource() {
-        InputSource result = new StringInputDevice(load());
+        InputSource result = new StringInputSource(load());
         return result;
     }
 
